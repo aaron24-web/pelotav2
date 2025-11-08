@@ -200,15 +200,14 @@ class _SaveScoreDialogState extends State<_SaveScoreDialog> {
                             ),
                           );
                         } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Error al guardar score: $e'),
-                                backgroundColor: Colors.red,
-                                duration: const Duration(seconds: 3),
-                              ),
-                            );
-                          }
+                          if (!mounted) return; // Moved this line
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error al guardar score: $e'),
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
                         }
                       },
                       icon: const Icon(Icons.save),
