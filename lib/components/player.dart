@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:flame/components.dart';
-import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flutter/material.dart';
@@ -23,35 +22,45 @@ enum PlayerColor {
       'alien${toString().split('.').last.capitalize}_round.png';
 }
 
-class Player extends BodyComponentWithUserData with DragCallbacks {
-  Player(Vector2 position, Sprite sprite)
-    : _sprite = sprite,
-      super(
-        renderBody: false,
-        bodyDef: BodyDef()
-          ..position = position
-          ..type = BodyType.static
-          ..angularDamping = 0.1
-          ..linearDamping = 0.1,
-        fixtureDefs: [
-          FixtureDef(CircleShape()..radius = playerSize / 2)
-            ..restitution = 0.4
-            ..density = 0.75
-            ..friction = 0.5,
-        ],
-      );
+class Player extends BodyComponentWithUserData with DragCallbacks, ContactCallbacks {
+  Player(Vector2 position, Sprite sprite, {
+    required this.initialPosition,
+    this.showAimingArrow = true,
+    this.onShot,
+    this.speedMultiplier = 1.0,
+  }) : _sprite = sprite,
+       super(
+         renderBody: false,
+         bodyDef: BodyDef()
+           ..position = position
+           ..type = BodyType.static
+           ..angularDamping = 0.1
+           ..linearDamping = 0.1,
+         fixtureDefs: [
+           FixtureDef(CircleShape()..radius = playerSize / 2)
+             ..restitution = 0.4
+             ..density = 0.75
+             ..friction = 0.5,
+         ],
+       );
 
   final Sprite _sprite;
+  final Vector2 initialPosition;
+  final bool showAimingArrow;
+  final VoidCallback? onShot;
+  final double speedMultiplier;
+  bool _shouldReturn = false;
 
   @override
   Future<void> onLoad() {
     addAll([
-      CustomPainterComponent(
-        painter: _DragPainter(this),
-        anchor: Anchor.center,
-        size: Vector2(playerSize, playerSize),
-        position: Vector2(0, 0),
-      ),
+      if (showAimingArrow)
+        CustomPainterComponent(
+          painter: _DragPainter(this),
+          anchor: Anchor.center,
+          size: Vector2(playerSize, playerSize),
+          position: Vector2(0, 0),
+        ),
       SpriteComponent(
         anchor: Anchor.center,
         sprite: _sprite,
@@ -66,13 +75,38 @@ class Player extends BodyComponentWithUserData with DragCallbacks {
   void update(double dt) {
     super.update(dt);
 
-    if (!body.isAwake) {
-      removeFromParent();
+    // Si el jugador sale de la pantalla o se detiene, volver rápido
+    if (body.bodyType == BodyType.dynamic) {
+      if (position.x > camera.visibleWorldRect.right + 5 ||
+          position.x < camera.visibleWorldRect.left - 5 ||
+          position.y > camera.visibleWorldRect.bottom + 5 ||
+          (!body.isAwake && body.linearVelocity.length < 0.5)) {
+        _shouldReturn = true;
+      }
     }
 
-    if (position.x > camera.visibleWorldRect.right + 10 ||
-        position.x < camera.visibleWorldRect.left - 10) {
-      removeFromParent();
+    // Volver a la posición inicial rápidamente
+    if (_shouldReturn) {
+      body.setTransform(initialPosition, 0);
+      body.setType(BodyType.static);
+      body.setAwake(false);
+      body.linearVelocity = Vector2.zero();
+      body.angularVelocity = 0;
+      _dragDelta = Vector2.zero();
+      _shouldReturn = false;
+      
+      // Restaurar la flecha de apuntar si showAimingArrow es true
+      if (showAimingArrow && 
+          !children.any((child) => child is CustomPainterComponent)) {
+        add(
+          CustomPainterComponent(
+            painter: _DragPainter(this),
+            anchor: Anchor.center,
+            size: Vector2(playerSize, playerSize),
+            position: Vector2(0, 0),
+          ),
+        );
+      }
     }
   }
 
@@ -104,8 +138,28 @@ class Player extends BodyComponentWithUserData with DragCallbacks {
           .firstOrNull
           ?.removeFromParent();
       body.setType(BodyType.dynamic);
-      body.applyLinearImpulse(_dragDelta * -50);
-      add(RemoveEffect(delay: 5.0));
+      body.applyLinearImpulse(_dragDelta * -50 * speedMultiplier);
+      // Notificar que se disparó
+      onShot?.call();
+      // Programar retorno rápido después de 2 segundos máximo
+      Future.delayed(const Duration(seconds: 2), () {
+        if (isMounted && body.bodyType == BodyType.dynamic) {
+          _shouldReturn = true;
+        }
+      });
+    }
+  }
+
+  @override
+  void beginContact(Object other, Contact contact) {
+    super.beginContact(other, contact);
+    // Si golpea algo con suficiente velocidad, programar retorno
+    if (body.linearVelocity.length > 20) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (isMounted && body.bodyType == BodyType.dynamic) {
+          _shouldReturn = true;
+        }
+      });
     }
   }
 }

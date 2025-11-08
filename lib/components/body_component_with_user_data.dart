@@ -9,12 +9,21 @@ class BodyComponentWithUserData extends BodyComponent {
     super.paint,
     super.priority,
     super.renderBody,
+    this.onRemoveCallback,
   });
+
+  final void Function(BodyComponent)? onRemoveCallback;
 
   @override
   Body createBody() {
     final body = world.createBody(super.bodyDef!)..userData = this;
     fixtureDefs?.forEach(body.createFixture);
     return body;
+  }
+
+  @override
+  void onRemove() {
+    onRemoveCallback?.call(this);
+    super.onRemove();
   }
 }

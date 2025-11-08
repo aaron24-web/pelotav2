@@ -31,8 +31,9 @@ enum EnemyColor {
 }
 
 class Enemy extends BodyComponentWithUserData with ContactCallbacks {
-  Enemy(Vector2 position, Sprite sprite)
+  Enemy(Vector2 position, Sprite sprite, {void Function(BodyComponent)? onRemove})
     : super(
+        onRemoveCallback: onRemove,
         renderBody: false,
         bodyDef: BodyDef()
           ..position = position

@@ -247,16 +247,19 @@ Map<BrickDamage, String> brickFileNames(BrickType type, BrickSize size) {
   };
 }
 
-class Brick extends BodyComponentWithUserData {
+class Brick extends BodyComponentWithUserData with ContactCallbacks {
   Brick({
     required this.type,
     required this.size,
     required BrickDamage damage,
     required Vector2 position,
     required Map<BrickDamage, Sprite> sprites,
+    void Function(BodyComponent)? onRemove,
+    this.damageMultiplier = 1.0,
   }) : _damage = damage,
        _sprites = sprites,
        super(
+         onRemoveCallback: onRemove,
          renderBody: false,
          bodyDef: BodyDef()
            ..position = position
@@ -279,6 +282,7 @@ class Brick extends BodyComponentWithUserData {
   final BrickType type;
   final BrickSize size;
   final Map<BrickDamage, Sprite> _sprites;
+  final double damageMultiplier;
 
   BrickDamage _damage;
   BrickDamage get damage => _damage;
@@ -298,5 +302,27 @@ class Brick extends BodyComponentWithUserData {
     );
     add(_spriteComponent);
     return super.onLoad();
+  }
+
+  @override
+  void beginContact(Object other, Contact contact) {
+    super.beginContact(other, contact);
+    
+    // Calcular velocidad de impacto
+    final impactVelocity = (contact.bodyA.linearVelocity - contact.bodyB.linearVelocity).length;
+    
+    // Si el impacto es fuerte, romper el bloque (umbral reducido con damageMultiplier)
+    final threshold = 25 / damageMultiplier;
+    if (impactVelocity > threshold) {
+      // Incrementar daño progresivamente
+      if (_damage == BrickDamage.none) {
+        damage = BrickDamage.some;
+      } else if (_damage == BrickDamage.some) {
+        damage = BrickDamage.lots;
+      } else if (_damage == BrickDamage.lots) {
+        // Bloque completamente destruido - onRemove se llamará automáticamente
+        removeFromParent();
+      }
+    }
   }
 }
