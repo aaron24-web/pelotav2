@@ -262,13 +262,15 @@ class ShopManager {
 // Widget de la tienda
 class ShopScreen extends StatefulWidget {
   final ShopManager shopManager;
-  final Function(LevelType) onStartGame;
+  final MyPhysicsGame? game;
+  final bool isOverlay;
 
   const ShopScreen({
-    Key? key,
+    super.key,
     required this.shopManager,
-    required this.onStartGame,
-  }) : super(key: key);
+    this.game,
+    this.isOverlay = false,
+  }) : assert(isOverlay ? game != null : true, 'Game instance must be provided for overlays');
 
   @override
   State<ShopScreen> createState() => _ShopScreenState();
@@ -327,66 +329,74 @@ class _ShopScreenState extends State<ShopScreen> {
                         ),
                       ],
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.shade700,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 4,
-                                offset: Offset(2, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.monetization_on, color: Colors.white),
-                              SizedBox(width: 8),
-                              Text(
-                                '${widget.shopManager.coins}',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                    if (widget.isOverlay)
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white, size: 32),
+                        onPressed: () {
+                          widget.game?.overlays.remove('shop');
+                        },
+                      )
+                    else
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade700,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 4,
+                                  offset: Offset(2, 2),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        TextButton.icon(
-                          onPressed: () {
-                            // Dar monedas gratis para probar
-                            setState(() {
-                              widget.shopManager.coins += 200;
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('¡+200 monedas gratis!'),
-                                backgroundColor: Colors.green,
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
-                          },
-                          icon: Icon(Icons.add_circle, color: Colors.white70, size: 16),
-                          label: Text(
-                            'Monedas gratis',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.monetization_on, color: Colors.white),
+                                SizedBox(width: 8),
+                                Text(
+                                  '${widget.shopManager.coins}',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          SizedBox(height: 4),
+                          TextButton.icon(
+                            onPressed: () {
+                              // Dar monedas gratis para probar
+                              setState(() {
+                                widget.shopManager.coins += 200;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('¡+200 monedas gratis!'),
+                                  backgroundColor: Colors.green,
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            icon: Icon(Icons.add_circle, color: Colors.white70, size: 16),
+                            label: Text(
+                              'Monedas gratis',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                   ],
                 ),
                 SizedBox(height: 20),
@@ -429,65 +439,6 @@ class _ShopScreenState extends State<ShopScreen> {
                       ],
                     ),
                   ),
-                ),
-                
-                SizedBox(height: 16),
-                
-                // Botones de iniciar juego
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 60,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            widget.onStartGame(LevelType.normal);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green.shade700,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 8,
-                          ),
-                          child: Text(
-                            'NIVEL NORMAL',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: SizedBox(
-                        height: 60,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            widget.onStartGame(LevelType.bigBoss);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red.shade700,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 8,
-                          ),
-                          child: Text(
-                            'BIG BOSS',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -608,12 +559,12 @@ class _ShopItemCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              item.color.withOpacity(0.4),
-              item.color.withOpacity(0.2),
+              item.color.withAlpha(102),
+              item.color.withAlpha(51),
             ],
           ),
           border: Border.all(
-            color: item.color.withOpacity(0.5),
+            color: item.color.withAlpha(128),
             width: 2,
           ),
         ),
@@ -626,7 +577,7 @@ class _ShopItemCard extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: item.color.withOpacity(0.2),
+                  color: item.color.withAlpha(51),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -920,7 +871,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                     labelStyle: TextStyle(color: Colors.white70),
                     prefixIcon: Icon(Icons.credit_card, color: Colors.white70),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.1),
+                    fillColor: Colors.white.withAlpha(26),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: Colors.white30),
@@ -962,7 +913,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                     labelStyle: TextStyle(color: Colors.white70),
                     prefixIcon: Icon(Icons.person, color: Colors.white70),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.1),
+                    fillColor: Colors.white.withAlpha(26),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: Colors.white30),
