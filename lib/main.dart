@@ -14,14 +14,38 @@ void main() async {
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
 
   await Supabase.initialize(
-    url: 'https://qwvhwnsapbbnqwdrdzop.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3dmh3bnNhcGJibnF3ZHJkem9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE3MDI5MzIsImV4cCI6MjA3NzI3ODkzMn0.BGbq6BU45nOD_1I0HAnB_VilSs-cnZYvlBY0V2ZVGto',
+    url: 'https://cjxeuuvmqhzcupxmhvhs.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqeGV1dXZtcWh6Y3VweG1odmhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2NTkxMjIsImV4cCI6MjA3NzIzNTEyMn0.bREKQHREsCv7O16AwDXHBckqV2dN5WVwgilECOEt5Uw',
   );
 
-  runApp(
-    const MaterialApp(
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Angry Birds',
       debugShowCheckedModeBanner: false,
-      home: LoginScreen(),
-    ),
-  );
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: StreamBuilder<AuthState>(
+        stream: Supabase.instance.client.auth.onAuthStateChange,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          if (snapshot.hasData && snapshot.data?.session != null) {
+            return const LevelSelectionScreen();
+          }
+          return const LoginScreen();
+        },
+      ),
+    );
+  }
 }

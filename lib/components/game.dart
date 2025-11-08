@@ -65,7 +65,6 @@ class MyPhysicsGame extends Forge2DGame {
   late final TextComponent _scoreText;
   int _score = 0;
   bool _gameEnded = false;
-  bool _firstShot = true;
   bool _playerWon = false;
 
   int get score => _score;
@@ -256,7 +255,6 @@ class MyPhysicsGame extends Forge2DGame {
         onShot: () {
           _shotCounter++;
           _shotCounterText.text = 'Disparos: $_shotCounter/$_maxShots';
-          _firstShot = false;
           
           // Verificar inmediatamente si se alcanzó o excedió el límite de tiros
           if (_shotCounter >= _maxShots && !_gameEnded) {
@@ -369,19 +367,19 @@ class MyPhysicsGame extends Forge2DGame {
     enemiesFullyAdded = true;
   }
 
-  Future<void> saveScore(String name) async {
+  Future<void> saveScore() async {
     try {
-      // Guardar score sin level_type (la columna no existe en la BD)
-      await Supabase.instance.client.from('scores_puntuaje').insert([
+      final userId = Supabase.instance.client.auth.currentUser!.id;
+      await Supabase.instance.client.from('puntaje').insert([
         {
-          'player_name': name,
+          'pelorero_id': userId,
           'score': _score,
         },
       ]);
-      print('Score guardado exitosamente: $name - $_score - Nivel: ${levelType == LevelType.bigBoss ? 'Big Boss' : 'Normal'}');
+      debugPrint('Score guardado exitosamente para el usuario $userId - $_score');
     } catch (e) {
-      print('Error al guardar score: $e');
-      rethrow; // Re-lanzar el error para que se muestre al usuario
+      debugPrint('Error al guardar score: $e');
+      rethrow;
     }
   }
 
@@ -398,7 +396,6 @@ class MyPhysicsGame extends Forge2DGame {
     _score = 0;
     _shotCounter = 0;
     _gameEnded = false;
-    _firstShot = true;
     _playerWon = false;
     enemiesFullyAdded = false;
     

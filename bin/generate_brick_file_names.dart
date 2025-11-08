@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:equatable/equatable.dart';
 import 'package:xml/xml.dart';
 import 'package:xml/xpath.dart';
+import 'package:flutter/foundation.dart'; // Added for debugPrint
 
 void main() {
   final file = File('assets/spritesheet_elements.xml');
@@ -16,7 +17,7 @@ void main() {
       height: int.parse(node.getAttribute('height')!),
     );
   }
-  print(generateBrickFileNames(rects));
+  debugPrint(generateBrickFileNames(rects));
 }
 
 class Rect extends Equatable {

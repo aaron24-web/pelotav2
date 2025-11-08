@@ -110,14 +110,6 @@ class _SaveScoreDialog extends StatefulWidget {
 }
 
 class _SaveScoreDialogState extends State<_SaveScoreDialog> {
-  final _textController = TextEditingController();
-
-  @override
-  void dispose() {
-    _textController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final won = widget.game.playerWon;
@@ -189,32 +181,6 @@ class _SaveScoreDialogState extends State<_SaveScoreDialog> {
               ),
               const SizedBox(height: 24),
               
-              // Instrucción
-              Text(
-                'Ingresa tu nombre para guardar tu score',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              
-              // Campo de texto
-              TextField(
-                controller: _textController,
-                decoration: InputDecoration(
-                  labelText: 'Nombre del jugador',
-                  prefixIcon: const Icon(Icons.person),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey.shade50,
-                ),
-              ),
-              const SizedBox(height: 24),
-              
               // Botones de acción
               Column(
                 children: [
@@ -223,37 +189,26 @@ class _SaveScoreDialogState extends State<_SaveScoreDialog> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        if (_textController.text.isNotEmpty) {
-                          try {
-                            await widget.game.saveScore(_textController.text);
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Score guardado exitosamente'),
-                                  backgroundColor: Colors.green,
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
-                            }
-                          } catch (e) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Error al guardar score: $e'),
-                                  backgroundColor: Colors.red,
-                                  duration: const Duration(seconds: 3),
-                                ),
-                              );
-                            }
-                          }
-                        } else {
+                        try {
+                          await widget.game.saveScore();
+                          if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Por favor ingresa tu nombre'),
-                              backgroundColor: Colors.orange,
+                              content: Text('Score guardado exitosamente'),
+                              backgroundColor: Colors.green,
                               duration: Duration(seconds: 2),
                             ),
                           );
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error al guardar score: $e'),
+                                backgroundColor: Colors.red,
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          }
                         }
                       },
                       icon: const Icon(Icons.save),

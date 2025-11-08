@@ -16,7 +16,7 @@ dependencies:
   xml: ^6.5.0
   equatable: ^2.0.7
   audioplayers: ^6.0.0
-  supabase_flutter: ^2.0.0
+  supabase_flutter: ^2.10.3
 
 dev_dependencies:
   flutter_test:
