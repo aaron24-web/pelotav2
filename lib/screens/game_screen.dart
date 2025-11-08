@@ -15,6 +15,7 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> {
   late final MyPhysicsGame _game;
   final ShopManager _shopManager = ShopManager();
+  final ValueNotifier<bool> _isShopOpen = ValueNotifier(false);
 
   @override
   void initState() {
@@ -23,6 +24,12 @@ class _GameScreenState extends State<GameScreen> {
       shopManager: _shopManager,
       levelType: widget.levelType,
     );
+  }
+
+  @override
+  void dispose() {
+    _isShopOpen.dispose();
+    super.dispose();
   }
 
   @override
@@ -45,29 +52,38 @@ class _GameScreenState extends State<GameScreen> {
                   shopManager: _shopManager,
                   game: game as MyPhysicsGame,
                   isOverlay: true,
+                  onClose: () {
+                    _game.overlays.remove('shop');
+                    _isShopOpen.value = false;
+                  },
                 );
               },
             },
           ),
           // Botón de la tienda
-          Positioned(
-            top: 20,
-            right: 20,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                if (_game.overlays.isActive('shop')) {
-                  _game.overlays.remove('shop');
-                } else {
-                  _game.overlays.add('shop');
-                }
-              },
-              icon: const Icon(Icons.shopping_cart),
-              label: const Text('Tienda'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange.shade700,
-                foregroundColor: Colors.white,
-              ),
-            ),
+          ValueListenableBuilder<bool>(
+            valueListenable: _isShopOpen,
+            builder: (context, isShopOpen, child) {
+              if (isShopOpen) {
+                return const SizedBox.shrink();
+              }
+              return Positioned(
+                top: 20,
+                left: 20,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    _game.overlays.add('shop');
+                    _isShopOpen.value = true;
+                  },
+                  icon: const Icon(Icons.shopping_cart),
+                  label: const Text('Tienda'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade700,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),

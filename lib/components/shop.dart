@@ -264,12 +264,14 @@ class ShopScreen extends StatefulWidget {
   final ShopManager shopManager;
   final MyPhysicsGame? game;
   final bool isOverlay;
+  final VoidCallback? onClose;
 
   const ShopScreen({
     super.key,
     required this.shopManager,
     this.game,
     this.isOverlay = false,
+    this.onClose,
   }) : assert(isOverlay ? game != null : true, 'Game instance must be provided for overlays');
 
   @override
@@ -333,7 +335,11 @@ class _ShopScreenState extends State<ShopScreen> {
                       IconButton(
                         icon: const Icon(Icons.close, color: Colors.white, size: 32),
                         onPressed: () {
-                          widget.game?.overlays.remove('shop');
+                          if (widget.onClose != null) {
+                            widget.onClose!();
+                          } else {
+                            widget.game?.overlays.remove('shop');
+                          }
                         },
                       )
                     else
@@ -945,9 +951,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                         decoration: InputDecoration(
                           labelText: 'MM/AA',
                           labelStyle: TextStyle(color: Colors.white70),
-                          prefixIcon: Icon(Icons.calendar_today, color: Colors.white70),
-                          filled: true,
-                          fillColor: Colors.white.withOpacity(0.1),
+fillColor: Colors.white.withAlpha(26),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(color: Colors.white30),
@@ -991,7 +995,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
                           labelStyle: TextStyle(color: Colors.white70),
                           prefixIcon: Icon(Icons.lock, color: Colors.white70),
                           filled: true,
-                          fillColor: Colors.white.withOpacity(0.1),
+                          fillColor: Colors.white.withAlpha(26),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(color: Colors.white30),
