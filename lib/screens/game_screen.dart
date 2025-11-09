@@ -38,27 +38,29 @@ class _GameScreenState extends State<GameScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          GameWidget.controlled(
-            gameFactory: () => _game,
-            overlayBuilderMap: {
-              'dialog': (context, game) {
-                return _SaveScoreDialog(
-                  game: game as MyPhysicsGame,
-                  onReturnToShop: _returnToShop,
-                );
+          Expanded(
+            child: GameWidget.controlled(
+              gameFactory: () => _game,
+              overlayBuilderMap: {
+                'dialog': (context, game) {
+                  return _SaveScoreDialog(
+                    game: game as MyPhysicsGame,
+                    onReturnToShop: _returnToShop,
+                  );
+                },
+                'shop': (context, game) {
+                  return ShopScreen(
+                    shopManager: _shopManager,
+                    game: game as MyPhysicsGame,
+                    isOverlay: true,
+                    onClose: () {
+                      _game.overlays.remove('shop');
+                      _isShopOpen.value = false;
+                    },
+                  );
+                },
               },
-              'shop': (context, game) {
-                return ShopScreen(
-                  shopManager: _shopManager,
-                  game: game as MyPhysicsGame,
-                  isOverlay: true,
-                  onClose: () {
-                    _game.overlays.remove('shop');
-                    _isShopOpen.value = false;
-                  },
-                );
-              },
-            },
+            ),
           ),
           // Botón de la tienda
           ValueListenableBuilder<bool>(
@@ -92,15 +94,13 @@ class _GameScreenState extends State<GameScreen> {
 
   void _returnToShop() {
     _shopManager.resetItemsForNewTurn();
+    if (!mounted) return;
     Navigator.of(context).pop(); // Vuelve a la pantalla de login
   }
 }
 
 class _SaveScoreDialog extends StatefulWidget {
-  const _SaveScoreDialog({
-    required this.game,
-    this.onReturnToShop,
-  });
+  const _SaveScoreDialog({required this.game, this.onReturnToShop});
 
   final MyPhysicsGame game;
   final VoidCallback? onReturnToShop;
@@ -114,11 +114,9 @@ class _SaveScoreDialogState extends State<_SaveScoreDialog> {
   Widget build(BuildContext context) {
     final won = widget.game.playerWon;
     final score = widget.game.score;
-    
+
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         width: 400,
         padding: const EdgeInsets.all(24),
@@ -144,7 +142,7 @@ class _SaveScoreDialogState extends State<_SaveScoreDialog> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Mensaje principal
               Text(
                 won ? '¡Victoria!' : '¡Juego Terminado!',
@@ -155,10 +153,13 @@ class _SaveScoreDialogState extends State<_SaveScoreDialog> {
                 ),
               ),
               const SizedBox(height: 8),
-              
+
               // Score
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(12),
@@ -180,7 +181,7 @@ class _SaveScoreDialogState extends State<_SaveScoreDialog> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Botones de acción
               Column(
                 children: [
@@ -200,7 +201,9 @@ class _SaveScoreDialogState extends State<_SaveScoreDialog> {
                             ),
                           );
                         } catch (e) {
-                          if (!mounted) return; // Moved this line
+                          if (!mounted) {
+                            return; // Check mounted after async operation
+                          }
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('Error al guardar score: $e'),
@@ -223,7 +226,7 @@ class _SaveScoreDialogState extends State<_SaveScoreDialog> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // Nueva Ronda
                   SizedBox(
                     width: double.infinity,
@@ -245,7 +248,7 @@ class _SaveScoreDialogState extends State<_SaveScoreDialog> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // Volver a la pantalla de inicio
                   if (widget.onReturnToShop != null)
                     SizedBox(

@@ -22,8 +22,11 @@ enum PlayerColor {
       'alien${toString().split('.').last.capitalize}_round.png';
 }
 
-class Player extends BodyComponentWithUserData with DragCallbacks, ContactCallbacks {
-  Player(Vector2 position, Sprite sprite, {
+class Player extends BodyComponentWithUserData
+    with DragCallbacks, ContactCallbacks {
+  Player(
+    Vector2 position,
+    Sprite sprite, {
     required this.initialPosition,
     this.showAimingArrow = true,
     this.onShot,
@@ -94,9 +97,9 @@ class Player extends BodyComponentWithUserData with DragCallbacks, ContactCallba
       body.angularVelocity = 0;
       _dragDelta = Vector2.zero();
       _shouldReturn = false;
-      
+
       // Restaurar la flecha de apuntar si showAimingArrow es true
-      if (showAimingArrow && 
+      if (showAimingArrow &&
           !children.any((child) => child is CustomPainterComponent)) {
         add(
           CustomPainterComponent(

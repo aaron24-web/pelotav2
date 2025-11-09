@@ -42,7 +42,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Registro exitoso! Por favor, revisa tu email para verificar tu cuenta.'),
+          content: Text(
+            'Registro exitoso! Por favor, revisa tu email para verificar tu cuenta.',
+          ),
           backgroundColor: Colors.green,
         ),
       );
@@ -82,12 +84,14 @@ class _LoginScreenState extends State<LoginScreen> {
       _loading = true;
     });
     try {
-      final AuthResponse response = await Supabase.instance.client.auth.signInWithPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      final AuthResponse response = await Supabase.instance.client.auth
+          .signInWithPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
       if (!mounted) return;
       if (response.user != null) {
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const LevelSelectionScreen()),
@@ -124,10 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            'assets/images/colored_land.png',
-            fit: BoxFit.cover,
-          ),
+          Image.asset('assets/images/colored_land.png', fit: BoxFit.cover),
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),
@@ -186,7 +187,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             keyboardType: TextInputType.emailAddress,
                             validator: (value) {
-                              if (value == null || value.isEmpty || !value.contains('@')) {
+                              if (value == null ||
+                                  value.isEmpty ||
+                                  !value.contains('@')) {
                                 return 'Por favor ingresa un email válido';
                               }
                               return null;
@@ -226,8 +229,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                 width: double.infinity,
                                 height: 50,
                                 child: ElevatedButton(
-                                  onPressed: _isRegistering ? _register : _login,
-                                  child: Text(_isRegistering ? 'Registrarse' : 'Iniciar Sesión'),
+                                  onPressed: _isRegistering
+                                      ? _register
+                                      : _login,
+                                  child: Text(
+                                    _isRegistering
+                                        ? 'Registrarse'
+                                        : 'Iniciar Sesión',
+                                  ),
                                 ),
                               ),
                         const SizedBox(height: 12),
@@ -241,9 +250,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             _isRegistering
                                 ? '¿Ya tienes una cuenta? Inicia Sesión'
                                 : '¿No tienes una cuenta? Regístrate',
-                            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ),
@@ -257,7 +269,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-
 class LevelSelectionScreen extends StatelessWidget {
   const LevelSelectionScreen({super.key});
 
@@ -267,10 +278,7 @@ class LevelSelectionScreen extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            'assets/images/colored_land.png',
-            fit: BoxFit.cover,
-          ),
+          Image.asset('assets/images/colored_land.png', fit: BoxFit.cover),
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -304,19 +312,21 @@ class LevelSelectionScreen extends StatelessWidget {
                   () => _navigateToGame(context, LevelType.bigBoss),
                   Colors.red.shade800,
                 ),
-                 const SizedBox(height: 40),
+                const SizedBox(height: 40),
                 ElevatedButton(
                   onPressed: () async {
                     await Supabase.instance.client.auth.signOut();
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
                       (route) => false,
                     );
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
                   child: const Text('Cerrar Sesión'),
-                )
+                ),
               ],
             ),
           ),
@@ -325,7 +335,12 @@ class LevelSelectionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLevelButton(BuildContext context, String text, VoidCallback onPressed, Color color) {
+  Widget _buildLevelButton(
+    BuildContext context,
+    String text,
+    VoidCallback onPressed,
+    Color color,
+  ) {
     return SizedBox(
       width: 300,
       height: 60,
@@ -353,9 +368,7 @@ class LevelSelectionScreen extends StatelessWidget {
   void _navigateToGame(BuildContext context, LevelType levelType) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => GameScreen(levelType: levelType),
-      ),
+      MaterialPageRoute(builder: (context) => GameScreen(levelType: levelType)),
     );
   }
 }

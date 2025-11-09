@@ -13,22 +13,24 @@ const bulletSize = 2.0;
 
 class Bullet extends BodyComponentWithUserData with ContactCallbacks {
   Bullet(Vector2 position, Vector2 velocity)
-      : _velocity = velocity,
-        super(
-          renderBody: false,
-          bodyDef: BodyDef()
-            ..position = position
-            ..type = BodyType.dynamic
-            ..bullet = true
-            ..linearVelocity = velocity,
-          fixtureDefs: [
-            FixtureDef(PolygonShape()..setAsBoxXY(bulletSize * 0.6, bulletSize * 0.3))
-              ..restitution = 0.8
-              ..density = 0.1
-              ..friction = 0.0
-              ..isSensor = false,
-          ],
-        );
+    : _velocity = velocity,
+      super(
+        renderBody: false,
+        bodyDef: BodyDef()
+          ..position = position
+          ..type = BodyType.dynamic
+          ..bullet = true
+          ..linearVelocity = velocity,
+        fixtureDefs: [
+          FixtureDef(
+              PolygonShape()..setAsBoxXY(bulletSize * 0.6, bulletSize * 0.3),
+            )
+            ..restitution = 0.8
+            ..density = 0.1
+            ..friction = 0.0
+            ..isSensor = false,
+        ],
+      );
 
   final Vector2 _velocity;
 
@@ -36,7 +38,7 @@ class Bullet extends BodyComponentWithUserData with ContactCallbacks {
   Future<void> onLoad() {
     // Calcular el ángulo de rotación basado en la velocidad
     final angle = atan2(_velocity.y, _velocity.x);
-    
+
     add(ArrowComponent(angle: angle));
     add(RemoveEffect(delay: 3.0));
     return super.onLoad();
@@ -45,9 +47,9 @@ class Bullet extends BodyComponentWithUserData with ContactCallbacks {
   @override
   void beginContact(Object other, Contact contact) {
     // Verificar si la bala impactó con un enemigo o bloque
-    if (other is Enemy || 
+    if (other is Enemy ||
         other is Brick ||
-        (contact.bodyA.userData is Enemy) || 
+        (contact.bodyA.userData is Enemy) ||
         (contact.bodyB.userData is Enemy) ||
         (contact.bodyA.userData is Brick) ||
         (contact.bodyB.userData is Brick)) {
@@ -73,12 +75,12 @@ class Bullet extends BodyComponentWithUserData with ContactCallbacks {
 
 class ArrowComponent extends CustomPainterComponent {
   ArrowComponent({required double angle})
-      : super(
-          painter: _ArrowPainter(),
-          anchor: Anchor.center,
-          size: Vector2(bulletSize * 1.2, bulletSize * 0.6),
-          angle: angle,
-        );
+    : super(
+        painter: _ArrowPainter(),
+        anchor: Anchor.center,
+        size: Vector2(bulletSize * 1.2, bulletSize * 0.6),
+        angle: angle,
+      );
 }
 
 class _ArrowPainter extends CustomPainter {
@@ -89,28 +91,30 @@ class _ArrowPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final path = Path();
-    
+
     // Cuerpo de la flecha (rectángulo)
-    path.addRect(Rect.fromLTWH(
-      size.width * 0.1,
-      size.height * 0.25,
-      size.width * 0.6,
-      size.height * 0.5,
-    ));
-    
+    path.addRect(
+      Rect.fromLTWH(
+        size.width * 0.1,
+        size.height * 0.25,
+        size.width * 0.6,
+        size.height * 0.5,
+      ),
+    );
+
     // Punta de la flecha (triángulo)
     path.moveTo(size.width * 0.7, size.height * 0.5);
     path.lineTo(size.width * 0.9, 0);
     path.lineTo(size.width * 0.9, size.height);
     path.close();
-    
+
     canvas.drawPath(path, paint);
-    
+
     // Plumas de la flecha
     final featherPaint = Paint()
       ..color = Colors.brown.shade700
       ..style = PaintingStyle.fill;
-    
+
     // Pluma izquierda
     canvas.drawPath(
       Path()
@@ -120,7 +124,7 @@ class _ArrowPainter extends CustomPainter {
         ..close(),
       featherPaint,
     );
-    
+
     // Pluma derecha
     canvas.drawPath(
       Path()
@@ -135,4 +139,3 @@ class _ArrowPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-

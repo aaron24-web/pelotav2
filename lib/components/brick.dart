@@ -307,10 +307,11 @@ class Brick extends BodyComponentWithUserData with ContactCallbacks {
   @override
   void beginContact(Object other, Contact contact) {
     super.beginContact(other, contact);
-    
+
     // Calcular velocidad de impacto
-    final impactVelocity = (contact.bodyA.linearVelocity - contact.bodyB.linearVelocity).length;
-    
+    final impactVelocity =
+        (contact.bodyA.linearVelocity - contact.bodyB.linearVelocity).length;
+
     // Si el impacto es fuerte, romper el bloque (umbral reducido con damageMultiplier)
     final threshold = 25 / damageMultiplier;
     if (impactVelocity > threshold) {

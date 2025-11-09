@@ -18,10 +18,7 @@ import 'big_boss.dart';
 import 'player.dart';
 import 'shop.dart';
 
-enum LevelType {
-  normal,
-  bigBoss,
-}
+enum LevelType { normal, bigBoss }
 
 class MyPhysicsGame extends Forge2DGame {
   final ShopManager? shopManager;
@@ -32,13 +29,11 @@ class MyPhysicsGame extends Forge2DGame {
   int _scoreMultiplier = 1;
 
   MyPhysicsGame({this.shopManager, this.levelType = LevelType.normal})
-    : super(
-        gravity: Vector2(0, 10),
-      ) {
+    : super(gravity: Vector2(0, 10)) {
     // Aplicar items de la tienda
     if (shopManager != null) {
       _maxShots = 10 + shopManager!.getTotalExtraShots();
-      
+
       // Si tiene combo pack, aplicar todos los beneficios
       if (shopManager!.hasComboPack()) {
         _playerSpeedMultiplier = 1.5;
@@ -80,8 +75,8 @@ class MyPhysicsGame extends Forge2DGame {
   @override
   FutureOr<void> onLoad() async {
     // Cargar imagen de fondo según el tipo de nivel
-    final backgroundImagePath = levelType == LevelType.bigBoss 
-        ? 'baby.png' 
+    final backgroundImagePath = levelType == LevelType.bigBoss
+        ? 'baby.png'
         : 'colored_grass.png';
     final backgroundImage = await images.load(backgroundImagePath);
     final spriteSheets = await Future.wait([
@@ -111,27 +106,27 @@ class MyPhysicsGame extends Forge2DGame {
     await _backgroundMusicPlayer.play(AssetSource('audio/fondo.mp3'));
 
     await super.onLoad();
-    
+
     // Configurar cámara con viewport que llena toda la pantalla horizontal
     // Usar el tamaño real de la pantalla (ya está en horizontal por SystemChrome)
     final screenSize = size;
     camera.viewport = FixedResolutionViewport(
       resolution: Vector2(screenSize.x, screenSize.y),
     );
-    
+
     await world.add(Background(sprite: Sprite(backgroundImage)));
     await addGround();
-    
+
     // Cargar nivel según el tipo
     if (levelType == LevelType.bigBoss) {
       unawaited(addBigBossLevel());
     } else {
       unawaited(addBricks().then((_) => addEnemies()));
     }
-    
+
     // Inicializar textos usando HUDComponent para que siempre sean visibles
     final viewportSize = camera.viewport.size;
-    
+
     _shotCounterText = TextComponent(
       text: 'Disparos: 0/$_maxShots',
       anchor: Anchor.topRight,
@@ -143,18 +138,14 @@ class MyPhysicsGame extends Forge2DGame {
           fontSize: 18,
           fontWeight: FontWeight.bold,
           shadows: [
-            Shadow(
-              blurRadius: 4.0,
-              color: Colors.black,
-              offset: Offset(2, 2),
-            ),
+            Shadow(blurRadius: 4.0, color: Colors.black, offset: Offset(2, 2)),
           ],
         ),
       ),
     );
     // Agregar como HUD para que esté siempre visible
     camera.viewport.add(_shotCounterText);
-    
+
     _scoreText = TextComponent(
       text: 'Score: 0',
       anchor: Anchor.topRight,
@@ -166,18 +157,14 @@ class MyPhysicsGame extends Forge2DGame {
           fontSize: 18,
           fontWeight: FontWeight.bold,
           shadows: [
-            Shadow(
-              blurRadius: 4.0,
-              color: Colors.black,
-              offset: Offset(2, 2),
-            ),
+            Shadow(blurRadius: 4.0, color: Colors.black, offset: Offset(2, 2)),
           ],
         ),
       ),
     );
     // Agregar como HUD para que esté siempre visible
     camera.viewport.add(_scoreText);
-    
+
     await addPlayer();
   }
 
@@ -243,7 +230,7 @@ class MyPhysicsGame extends Forge2DGame {
   }
 
   Vector2? _playerInitialPosition;
-  
+
   Future<void> addPlayer() async {
     _playerInitialPosition = Vector2(camera.visibleWorldRect.left * 2 / 3, 0);
     return world.add(
@@ -255,7 +242,7 @@ class MyPhysicsGame extends Forge2DGame {
         onShot: () {
           _shotCounter++;
           _shotCounterText.text = 'Disparos: $_shotCounter/$_maxShots';
-          
+
           // Verificar inmediatamente si se alcanzó o excedió el límite de tiros
           if (_shotCounter >= _maxShots && !_gameEnded) {
             _gameEnded = true;
@@ -283,10 +270,8 @@ class MyPhysicsGame extends Forge2DGame {
     } else {
       hasEnemies = world.children.whereType<Enemy>().isNotEmpty;
     }
-    
-    if (isMounted &&
-        world.children.whereType<Player>().isEmpty &&
-        hasEnemies) {
+
+    if (isMounted && world.children.whereType<Player>().isEmpty && hasEnemies) {
       if (_shotCounter >= _maxShots) {
         if (!_gameEnded) {
           _gameEnded = true;
@@ -369,14 +354,18 @@ class MyPhysicsGame extends Forge2DGame {
 
   Future<void> saveScore() async {
     try {
-      final userId = Supabase.instance.client.auth.currentUser!.id;
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        debugPrint('No user logged in. Score not saved.');
+        return;
+      }
+      final userId = currentUser.id;
       await Supabase.instance.client.from('puntaje').insert([
-        {
-          'pelorero_id': userId,
-          'score': _score,
-        },
+        {'pelorero_id': userId, 'score': _score},
       ]);
-      debugPrint('Score guardado exitosamente para el usuario $userId - $_score');
+      debugPrint(
+        'Score guardado exitosamente para el usuario $userId - $_score',
+      );
     } catch (e) {
       debugPrint('Error al guardar score: $e');
       rethrow;
@@ -388,38 +377,38 @@ class MyPhysicsGame extends Forge2DGame {
     await _backgroundMusicPlayer.stop();
     await _winMusicPlayer.stop();
     await _gameOverMusicPlayer.stop();
-    
+
     // Remover overlay
     overlays.remove('dialog');
-    
+
     // Resetear variables
     _score = 0;
     _shotCounter = 0;
     _gameEnded = false;
     _playerWon = false;
     enemiesFullyAdded = false;
-    
+
     // Actualizar textos
     _scoreText.text = 'Score: 0';
     _shotCounterText.text = 'Disparos: 0/$_maxShots';
-    
+
     // Asegurar que los textos estén visibles y en la posición correcta
     _updateTextPositions();
-    
+
     // Limpiar el mundo
     world.removeAll(world.children.toList());
-    
+
     // Reiniciar música de fondo
     await _backgroundMusicPlayer.play(AssetSource('audio/fondo.mp3'));
-    
+
     // Recargar elementos del juego según el tipo de nivel
-    final backgroundImagePath = levelType == LevelType.bigBoss 
-        ? 'baby.png' 
+    final backgroundImagePath = levelType == LevelType.bigBoss
+        ? 'baby.png'
         : 'colored_grass.png';
     final backgroundImage = await images.load(backgroundImagePath);
     await world.add(Background(sprite: Sprite(backgroundImage)));
     await addGround();
-    
+
     if (levelType == LevelType.bigBoss) {
       unawaited(addBigBossLevel());
     } else {
@@ -432,11 +421,11 @@ class MyPhysicsGame extends Forge2DGame {
   Future<void> addBigBossLevel() async {
     // Crear una estructura defensiva más compleja y difícil
     // Formar una "fortaleza" más robusta alrededor del boss
-    
+
     // Bricks en forma de pirámide/estructura defensiva
     final centerX = camera.visibleWorldRect.right / 3;
     final baseY = 0.0;
-    
+
     // Base de la estructura (bricks grandes de piedra - más resistentes)
     for (var i = 0; i < 4; i++) {
       await world.add(
@@ -444,10 +433,7 @@ class MyPhysicsGame extends Forge2DGame {
           type: BrickType.stone, // Bricks de piedra más resistentes
           size: BrickSize.size220x70,
           damage: BrickDamage.none,
-          position: Vector2(
-            centerX + (i - 1.5) * 2.5,
-            baseY - 1.5,
-          ),
+          position: Vector2(centerX + (i - 1.5) * 2.5, baseY - 1.5),
           sprites: brickFileNames(
             BrickType.stone,
             BrickSize.size220x70,
@@ -467,7 +453,7 @@ class MyPhysicsGame extends Forge2DGame {
             world.add(scoreText);
             scoreText.add(
               MoveByEffect(
-                Vector2(0, -1),
+                Vector2(0,-1),
                 EffectController(duration: 1),
                 onComplete: () => scoreText.removeFromParent(),
               ),
@@ -477,7 +463,7 @@ class MyPhysicsGame extends Forge2DGame {
       );
       await Future<void>.delayed(const Duration(milliseconds: 300));
     }
-    
+
     // Segunda capa de bricks (protección adicional)
     for (var i = 0; i < 3; i++) {
       await world.add(
@@ -485,10 +471,7 @@ class MyPhysicsGame extends Forge2DGame {
           type: BrickType.metal, // Bricks de metal
           size: BrickSize.size140x70,
           damage: BrickDamage.none,
-          position: Vector2(
-            centerX + (i - 1) * 2.0,
-            baseY - 3.0,
-          ),
+          position: Vector2(centerX + (i - 1) * 2.0, baseY - 3.0),
           sprites: brickFileNames(
             BrickType.metal,
             BrickSize.size140x70,
@@ -518,7 +501,7 @@ class MyPhysicsGame extends Forge2DGame {
       );
       await Future<void>.delayed(const Duration(milliseconds: 300));
     }
-    
+
     // Tercera capa superior (protección extra)
     for (var i = 0; i < 2; i++) {
       await world.add(
@@ -526,10 +509,7 @@ class MyPhysicsGame extends Forge2DGame {
           type: BrickType.stone, // Bricks de piedra en la parte superior
           size: BrickSize.size140x70,
           damage: BrickDamage.none,
-          position: Vector2(
-            centerX + (i - 0.5) * 2.0,
-            baseY - 4.5,
-          ),
+          position: Vector2(centerX + (i - 0.5) * 2.0, baseY - 4.5),
           sprites: brickFileNames(
             BrickType.stone,
             BrickSize.size140x70,
@@ -559,17 +539,18 @@ class MyPhysicsGame extends Forge2DGame {
       );
       await Future<void>.delayed(const Duration(milliseconds: 300));
     }
-    
+
     // Esperar un momento antes de agregar el boss
     await Future<void>.delayed(const Duration(seconds: 1));
-    
+
     // Agregar el Big Boss en el centro de la estructura
     await world.add(
       BigBoss(
         Vector2(centerX, baseY - 1.0),
         aliens.getSprite('alienPink_suit.png'), // Usar sprite de boss
         onRemove: (boss) {
-          _score += 500 * _scoreMultiplier; // Muchos puntos por derrotar al boss
+          _score +=
+              500 * _scoreMultiplier; // Muchos puntos por derrotar al boss
           _scoreText.text = 'Score: $_score';
           final scoreText = TextComponent(
             text: '+500',
@@ -594,7 +575,7 @@ class MyPhysicsGame extends Forge2DGame {
         },
       ),
     );
-    
+
     enemiesFullyAdded = true;
   }
 }

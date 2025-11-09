@@ -15,7 +15,8 @@ void main() async {
 
   await Supabase.initialize(
     url: 'https://cjxeuuvmqhzcupxmhvhs.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqeGV1dXZtcWh6Y3VweG1odmhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2NTkxMjIsImV4cCI6MjA3NzIzNTEyMn0.bREKQHREsCv7O16AwDXHBckqV2dN5WVwgilECOEt5Uw',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqeGV1dXZtcWh6Y3VweG1odmhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2NTkxMjIsImV4cCI6MjA3NzIzNTEyMn0.bREKQHREsCv7O16AwDXHBckqV2dN5WVwgilECOEt5Uw',
   );
 
   runApp(const MyApp());
@@ -29,9 +30,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Angry Birds',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: StreamBuilder<AuthState>(
         stream: Supabase.instance.client.auth.onAuthStateChange,
         builder: (context, snapshot) {
