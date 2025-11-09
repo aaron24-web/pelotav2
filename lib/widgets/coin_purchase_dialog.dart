@@ -25,27 +25,15 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
   final List<CoinPack> _coinPacks = [
     CoinPack(
       id: const Uuid().v4(),
+      name: '50 Monedas',
+      price: 100,
+      coins: 50,
+    ),
+    CoinPack(
+      id: const Uuid().v4(),
       name: '100 Monedas',
-      price: 0.99,
+      price: 90,
       coins: 100,
-    ),
-    CoinPack(
-      id: const Uuid().v4(),
-      name: '500 Monedas',
-      price: 4.99,
-      coins: 500,
-    ),
-    CoinPack(
-      id: const Uuid().v4(),
-      name: '1000 Monedas',
-      price: 9.99,
-      coins: 1000,
-    ),
-    CoinPack(
-      id: const Uuid().v4(),
-      name: '5000 Monedas',
-      price: 49.99,
-      coins: 5000,
     ),
   ];
 
@@ -96,7 +84,7 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
       child: ListTile(
         leading: const Icon(Icons.monetization_on, color: Colors.amber),
         title: Text(pack.name),
-        trailing: Text('\$${pack.price.toStringAsFixed(2)}'),
+        trailing: Text('\$${pack.price}'),
         onTap: () => _showConfirmationDialog(pack),
       ),
     );
@@ -153,10 +141,9 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Paquete: ${pack.name} (${pack.coins} monedas)'),
-              Text('Precio: \$${pack.price.toStringAsFixed(2)}'),
+              Text('Se cobrará \$${pack.price} por ${pack.coins} monedas.'),
+              const SizedBox(height: 10),
               Text('Tarjeta: **** **** **** ${_selectedCard!.cardNumberLast4}'),
-              Text('Titular: ${_selectedCard!.cardHolder}'),
             ],
           ),
           actions: <Widget>[
@@ -167,7 +154,7 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
               },
             ),
             ElevatedButton(
-              child: const Text('Confirmar'),
+              child: const Text('Aceptar'),
               onPressed: () async {
                 Navigator.of(dialogContext).pop(); // Close confirmation dialog
                 await _performPurchase(pack);
@@ -197,9 +184,11 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
         context,
       ).showSnackBar(SnackBar(content: Text('Error al comprar monedas: $e')));
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

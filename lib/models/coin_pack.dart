@@ -1,7 +1,7 @@
 class CoinPack {
   final String id;
   final String name;
-  final double price;
+  final int price;
   final int coins;
 
   CoinPack({

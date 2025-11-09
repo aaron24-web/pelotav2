@@ -49,6 +49,25 @@ class PaymentCard {
       expiryDate: json['expiry_date'] as String,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is PaymentCard &&
+        other.id == id &&
+        other.cardNumberLast4 == cardNumberLast4 &&
+        other.cardHolder == cardHolder &&
+        other.expiryDate == expiryDate;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+        cardNumberLast4.hashCode ^
+        cardHolder.hashCode ^
+        expiryDate.hashCode;
+  }
 }
 
 // Clase para manejar las tarjetas de pago
@@ -110,7 +129,7 @@ class CardManager {
 
 // Clase para manejar las compras de la tienda
 class ShopManager {
-  int coins = 500; // Monedas iniciales
+  int coins = 0;
   final Map<String, ShopItem> items = {};
   final CardManager cardManager = CardManager(); // Integrate CardManager
 
@@ -130,6 +149,17 @@ class ShopManager {
   // Inicializa los items desde Supabase
   Future<void> initialize() async {
     try {
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser != null) {
+        final userId = currentUser.id;
+        final data = await Supabase.instance.client
+            .from('peloreros')
+            .select('coins')
+            .eq('id', userId)
+            .single();
+        coins = data['coins'] as int;
+      }
+
       final List<Map<String, dynamic>> data = await Supabase.instance.client
           .from('habilidades')
           .select();
@@ -152,12 +182,25 @@ class ShopManager {
     }
   }
 
+  Future<void> updateCoins(int amount) async {
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentUser == null) {
+      throw Exception('User not logged in. Cannot update coins.');
+    }
+    final userId = currentUser.id;
+    final newCoins = coins + amount;
+    await Supabase.instance.client
+        .from('peloreros')
+        .update({'coins': newCoins}).eq('id', userId);
+    coins = newCoins;
+  }
+
   Future<Voucher> buyCoins(CoinPack coinPack, PaymentCard paymentCard) async {
     // Simulate payment processing
     await Future.delayed(const Duration(seconds: 2));
 
     // Update user's coin balance
-    coins += coinPack.coins;
+    await updateCoins(coinPack.coins);
 
     // Generate a unique voucher ID
     final voucherId = '${DateTime.now().millisecondsSinceEpoch}-${coinPack.id}';
@@ -179,11 +222,11 @@ class ShopManager {
     return coins >= item.price;
   }
 
-  void buyItem(String itemId) {
+  void buyItem(String itemId) async {
     final item = items[itemId];
     if (item == null || !canBuy(item)) return;
 
-    coins -= item.price;
+    await updateCoins(-item.price);
     item.quantity++;
   }
 
@@ -349,13 +392,16 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
           ],
         ),
-        if (widget.isOverlay)
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.white, size: 32),
-            onPressed: widget.onClose,
-          )
-        else
-          _buildCoinsDisplay(),
+        Row(
+          children: [
+            _buildCoinsDisplay(),
+            if (widget.isOverlay)
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 32),
+                onPressed: widget.onClose,
+              ),
+          ],
+        )
       ],
     );
   }
@@ -462,6 +508,17 @@ class _ShopScreenState extends State<ShopScreen> {
                     setState(() {
                       widget.shopManager.buyItem(item.id);
                     });
+                  },
+                  onNeedCoins: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => CoinPurchaseDialog(
+                        shopManager: widget.shopManager,
+                        onCoinsPurchased: () {
+                          setState(() {}); // Refresh ShopScreen
+                        },
+                      ),
+                    );
                   },
                 ),
               );
@@ -650,11 +707,13 @@ class _ShopItemCard extends StatelessWidget {
   final ShopItem item;
   final ShopManager shopManager;
   final VoidCallback onBuy;
+  final VoidCallback onNeedCoins;
 
   const _ShopItemCard({
     required this.item,
     required this.shopManager,
     required this.onBuy,
+    required this.onNeedCoins,
   });
 
   @override
@@ -761,7 +820,7 @@ class _ShopItemCard extends StatelessWidget {
                     width: double.infinity,
                     height: 28,
                     child: ElevatedButton(
-                      onPressed: canBuy ? onBuy : null,
+                      onPressed: canBuy ? onBuy : onNeedCoins,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: canBuy ? item.color : Colors.grey,
                         shape: RoundedRectangleBorder(
@@ -770,7 +829,7 @@ class _ShopItemCard extends StatelessWidget {
                         padding: EdgeInsets.zero,
                       ),
                       child: Text(
-                        canBuy ? 'COMPRAR' : 'SIN FONDOS',
+                        canBuy ? 'COMPRAR' : 'COMPRAR MONEDAS',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -802,41 +861,37 @@ class _PaymentCardWidget extends StatelessWidget {
       color: Colors.blueGrey.shade700,
       child: Container(
         width: 180,
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Icon(Icons.credit_card, color: Colors.white, size: 24),
+                const Icon(Icons.credit_card, color: Colors.white, size: 20),
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                  icon: const Icon(Icons.delete, color: Colors.red, size: 18),
                   onPressed: () => onDelete(card.id),
                 ),
               ],
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '**** **** **** ${card.cardNumberLast4}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  card.cardHolder,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-                Text(
-                  'Exp: ${card.expiryDate}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ],
+            const Spacer(),
+            Text(
+              '**** **** **** ${card.cardNumberLast4}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              card.cardHolder,
+              style: const TextStyle(color: Colors.white70, fontSize: 10),
+            ),
+            Text(
+              'Exp: ${card.expiryDate}',
+              style: const TextStyle(color: Colors.white70, fontSize: 10),
             ),
           ],
         ),
