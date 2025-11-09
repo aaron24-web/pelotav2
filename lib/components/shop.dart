@@ -222,7 +222,7 @@ class ShopManager {
     return coins >= item.price;
   }
 
-  void buyItem(String itemId) async {
+  Future<void> buyItem(String itemId) async {
     final item = items[itemId];
     if (item == null || !canBuy(item)) return;
 
@@ -284,6 +284,7 @@ class ShopScreen extends StatefulWidget {
 
 class _ShopScreenState extends State<ShopScreen> {
   late Future<void> _initFuture;
+  final Set<String> _isBuying = {};
 
   @override
   void initState() {
@@ -504,10 +505,19 @@ class _ShopScreenState extends State<ShopScreen> {
                 child: _ShopItemCard(
                   item: item,
                   shopManager: widget.shopManager,
-                  onBuy: () {
+                  isBuying: _isBuying.contains(item.id),
+                  onBuy: () async {
+                    if (_isBuying.contains(item.id)) return;
+
                     if (widget.shopManager.canBuy(item)) {
                       setState(() {
-                        widget.shopManager.buyItem(item.id);
+                        _isBuying.add(item.id);
+                      });
+
+                      await widget.shopManager.buyItem(item.id);
+
+                      setState(() {
+                        _isBuying.remove(item.id);
                       });
                     } else {
                       showDialog(
@@ -714,11 +724,13 @@ class _ShopScreenState extends State<ShopScreen> {
 class _ShopItemCard extends StatelessWidget {
   final ShopItem item;
   final ShopManager shopManager;
+  final bool isBuying;
   final VoidCallback onBuy;
 
   const _ShopItemCard({
     required this.item,
     required this.shopManager,
+    required this.isBuying,
     required this.onBuy,
   });
 
@@ -826,7 +838,7 @@ class _ShopItemCard extends StatelessWidget {
                     width: double.infinity,
                     height: 28,
                     child: ElevatedButton(
-                      onPressed: onBuy,
+                      onPressed: isBuying ? null : onBuy,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: canBuy ? item.color : Colors.grey,
                         shape: RoundedRectangleBorder(
@@ -834,14 +846,24 @@ class _ShopItemCard extends StatelessWidget {
                         ),
                         padding: EdgeInsets.zero,
                       ),
-                      child: const Text(
-                        'COMPRAR',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11,
-                        ),
-                      ),
+                      child: isBuying
+                          ? const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : const Text(
+                              'COMPRAR',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                              ),
+                            ),
                     ),
                   ),
                 ],
