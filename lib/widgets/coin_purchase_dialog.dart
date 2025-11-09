@@ -19,7 +19,8 @@ class CoinPurchaseDialog extends StatefulWidget {
 }
 
 class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
-  PaymentCard? _selectedCard;
+  int _selectedCardIndex = 0;
+  late PageController _pageController;
   bool _isLoading = false;
 
   final List<CoinPack> _coinPacks = [
@@ -40,33 +41,39 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
   @override
   void initState() {
     super.initState();
-    if (widget.shopManager.cardManager.cards.isNotEmpty) {
-      _selectedCard = widget.shopManager.cardManager.cards.first;
-    }
+    _pageController = PageController(viewportFraction: 0.8);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Comprar Monedas'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Selecciona un paquete de monedas:'),
-            const SizedBox(height: 10),
-            ..._coinPacks.map((pack) => _buildCoinPackTile(pack)),
-            const SizedBox(height: 20),
-            const Text('Selecciona un método de pago:'),
-            const SizedBox(height: 10),
-            if (widget.shopManager.cardManager.cards.isEmpty)
-              const Text('No hay tarjetas guardadas. Agrega una en la tienda.'),
-            ...widget.shopManager.cardManager.cards.map(
-              (card) => _buildPaymentCardSelection(card),
-            ),
-            const SizedBox(height: 20),
-            if (_isLoading) const CircularProgressIndicator(),
-          ],
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Selecciona un paquete de monedas:'),
+              const SizedBox(height: 10),
+              ..._coinPacks.map((pack) => _buildCoinPackTile(pack)),
+              const SizedBox(height: 20),
+              const Text('Selecciona un método de pago:'),
+              const SizedBox(height: 10),
+              if (widget.shopManager.cardManager.cards.isEmpty)
+                const Text('No hay tarjetas guardadas. Agrega una en la tienda.'),
+              if (widget.shopManager.cardManager.cards.isNotEmpty)
+                _buildCardCarousel(),
+              const SizedBox(height: 20),
+              if (_isLoading) const CircularProgressIndicator(),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -90,47 +97,109 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
     );
   }
 
-  Widget _buildPaymentCardSelection(PaymentCard card) {
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedCard = card;
-        });
-      },
+  Widget _buildCardCarousel() {
+    return Column(
+      children: [
+        SizedBox(
+          height: 150,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: widget.shopManager.cardManager.cards.length,
+            onPageChanged: (index) {
+              setState(() {
+                _selectedCardIndex = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              final card = widget.shopManager.cardManager.cards[index];
+              return _buildPaymentCard(card, index == _selectedCardIndex);
+            },
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            widget.shopManager.cardManager.cards.length,
+            (index) => _buildDot(index),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPaymentCard(PaymentCard card, bool isSelected) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      margin: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        color: isSelected ? Colors.blue.shade700 : Colors.grey.shade800,
+        boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: Colors.blue.withOpacity(0.5),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                ),
+              ]
+            : [],
+      ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Row(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Radio<PaymentCard>(
-              value: card,
-              groupValue: _selectedCard,
-              onChanged: (PaymentCard? value) {
-                setState(() {
-                  _selectedCard = value;
-                });
-              },
-            ),
-            Expanded(
-              child: Text(
-                '**** **** **** ${card.cardNumberLast4} (${card.cardHolder})',
+            const Icon(Icons.credit_card, color: Colors.white, size: 30),
+            const Spacer(),
+            Text(
+              '**** **** **** ${card.cardNumberLast4}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            Text('Exp: ${card.expiryDate}'),
+            const SizedBox(height: 5),
+            Text(
+              card.cardHolder,
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+            Text(
+              'Exp: ${card.expiryDate}',
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildDot(int index) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      height: 8,
+      width: _selectedCardIndex == index ? 24 : 8,
+      decoration: BoxDecoration(
+        color: _selectedCardIndex == index ? Colors.blue : Colors.grey,
+        borderRadius: BorderRadius.circular(4),
+      ),
+    );
+  }
+
   Future<void> _showConfirmationDialog(CoinPack pack) async {
-    if (_selectedCard == null) {
+    if (widget.shopManager.cardManager.cards.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Por favor, selecciona una tarjeta de pago.'),
+          content: Text('Por favor, agrega una tarjeta de pago en la tienda.'),
         ),
       );
       return;
     }
+
+    final selectedCard =
+        widget.shopManager.cardManager.cards[_selectedCardIndex];
 
     return showDialog<void>(
       context: context,
@@ -143,7 +212,7 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
             children: [
               Text('Se cobrará \$${pack.price} por ${pack.coins} monedas.'),
               const SizedBox(height: 10),
-              Text('Tarjeta: **** **** **** ${_selectedCard!.cardNumberLast4}'),
+              Text('Tarjeta: **** **** **** ${selectedCard.cardNumberLast4}'),
             ],
           ),
           actions: <Widget>[
@@ -157,7 +226,7 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
               child: const Text('Aceptar'),
               onPressed: () async {
                 Navigator.of(dialogContext).pop(); // Close confirmation dialog
-                await _performPurchase(pack);
+                await _performPurchase(pack, selectedCard);
               },
             ),
           ],
@@ -166,13 +235,13 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
     );
   }
 
-  Future<void> _performPurchase(CoinPack pack) async {
+  Future<void> _performPurchase(CoinPack pack, PaymentCard selectedCard) async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final voucher = await widget.shopManager.buyCoins(pack, _selectedCard!);
+      final voucher = await widget.shopManager.buyCoins(pack, selectedCard);
       if (!mounted) return;
       widget.onCoinsPurchased();
       Navigator.of(context).pop(); // Close CoinPurchaseDialog

@@ -505,20 +505,29 @@ class _ShopScreenState extends State<ShopScreen> {
                   item: item,
                   shopManager: widget.shopManager,
                   onBuy: () {
-                    setState(() {
-                      widget.shopManager.buyItem(item.id);
-                    });
-                  },
-                  onNeedCoins: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => CoinPurchaseDialog(
-                        shopManager: widget.shopManager,
-                        onCoinsPurchased: () {
-                          setState(() {}); // Refresh ShopScreen
-                        },
-                      ),
-                    );
+                    if (widget.shopManager.canBuy(item)) {
+                      setState(() {
+                        widget.shopManager.buyItem(item.id);
+                      });
+                    } else {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Monedas insuficientes'),
+                          content: const Text(
+                            'No tienes suficientes monedas para comprar este item.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text('Aceptar'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
                   },
                 ),
               );
@@ -679,17 +688,16 @@ class _ShopScreenState extends State<ShopScreen> {
                       cardHolderController.text,
                       expiryDateController.text,
                     );
-                    if (!mounted) return;
+                    if (!dialogContext.mounted) return;
                     Navigator.of(dialogContext).pop();
-                    if (!mounted) return; // Added explicit check
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Tarjeta agregada exitosamente!'),
                       ),
                     );
                   } catch (e) {
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    if (!dialogContext.mounted) return;
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
                       SnackBar(content: Text('Error al agregar tarjeta: $e')),
                     );
                   }
@@ -707,13 +715,11 @@ class _ShopItemCard extends StatelessWidget {
   final ShopItem item;
   final ShopManager shopManager;
   final VoidCallback onBuy;
-  final VoidCallback onNeedCoins;
 
   const _ShopItemCard({
     required this.item,
     required this.shopManager,
     required this.onBuy,
-    required this.onNeedCoins,
   });
 
   @override
@@ -820,7 +826,7 @@ class _ShopItemCard extends StatelessWidget {
                     width: double.infinity,
                     height: 28,
                     child: ElevatedButton(
-                      onPressed: canBuy ? onBuy : onNeedCoins,
+                      onPressed: onBuy,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: canBuy ? item.color : Colors.grey,
                         shape: RoundedRectangleBorder(
@@ -828,9 +834,9 @@ class _ShopItemCard extends StatelessWidget {
                         ),
                         padding: EdgeInsets.zero,
                       ),
-                      child: Text(
-                        canBuy ? 'COMPRAR' : 'COMPRAR MONEDAS',
-                        style: const TextStyle(
+                      child: const Text(
+                        'COMPRAR',
+                        style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 11,
