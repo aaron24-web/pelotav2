@@ -28,8 +28,14 @@ class MyPhysicsGame extends Forge2DGame {
   double _damageMultiplier = 1.0;
   int _scoreMultiplier = 1;
 
+  // State for active ability
+  ShopItem? _activeAbility;
+  int _abilityUses = 0;
+  late final TextComponent _abilityCounterText;
+  bool get isAbilityActive => _activeAbility != null;
+
   MyPhysicsGame({this.shopManager, this.levelType = LevelType.normal})
-    : super(gravity: Vector2(0, 10)) {
+      : super(gravity: Vector2(0, 10)) {
     // Aplicar items de la tienda
     if (shopManager != null) {
       _maxShots = 10 + shopManager!.getTotalExtraShots();
@@ -70,6 +76,7 @@ class MyPhysicsGame extends Forge2DGame {
     final viewportSize = camera.viewport.size;
     _shotCounterText.position = Vector2(viewportSize.x - 10, 10);
     _scoreText.position = Vector2(viewportSize.x - 10, 35);
+    _abilityCounterText.position = Vector2(viewportSize.x - 10, 60);
   }
 
   @override
@@ -165,7 +172,47 @@ class MyPhysicsGame extends Forge2DGame {
     // Agregar como HUD para que esté siempre visible
     camera.viewport.add(_scoreText);
 
+    _abilityCounterText = TextComponent(
+      text: '',
+      anchor: Anchor.topRight,
+      position: Vector2(viewportSize.x - 10, 60),
+      priority: 1000,
+      textRenderer: TextPaint(
+        style: TextStyle(
+          color: Colors.amber,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          shadows: [
+            Shadow(blurRadius: 4.0, color: Colors.black, offset: Offset(2, 2)),
+          ],
+        ),
+      ),
+    );
+    camera.viewport.add(_abilityCounterText);
+
     await addPlayer();
+  }
+
+  void activateAbility(ShopItem item) {
+    _activeAbility = item;
+    switch (item.id) {
+      case 'extra_shots':
+        _abilityUses = 5;
+        break;
+      case 'extra_life':
+        _abilityUses = 3;
+        break;
+      case 'mega_shots':
+        _abilityUses = 10;
+        break;
+    }
+    _abilityCounterText.text = '${item.name}: $_abilityUses';
+  }
+
+  void _deactivateAbility() {
+    _activeAbility = null;
+    _abilityUses = 0;
+    _abilityCounterText.text = '';
   }
 
   Future<void> addGround() {
@@ -240,16 +287,24 @@ class MyPhysicsGame extends Forge2DGame {
         initialPosition: _playerInitialPosition!,
         showAimingArrow: true,
         onShot: () {
-          _shotCounter++;
-          _shotCounterText.text = 'Disparos: $_shotCounter/$_maxShots';
-
-          // Verificar inmediatamente si se alcanzó o excedió el límite de tiros
-          if (_shotCounter >= _maxShots && !_gameEnded) {
-            _gameEnded = true;
-            _playerWon = false;
-            _backgroundMusicPlayer.stop();
-            _gameOverMusicPlayer.play(AssetSource('audio/game_over.mp3'));
-            overlays.add('dialog');
+          if (isAbilityActive) {
+            _abilityUses--;
+            if (_abilityUses <= 0) {
+              _deactivateAbility();
+            } else {
+              _abilityCounterText.text =
+                  '${_activeAbility!.name}: $_abilityUses';
+            }
+          } else {
+            _shotCounter++;
+            _shotCounterText.text = 'Disparos: $_shotCounter/$_maxShots';
+            if (_shotCounter >= _maxShots && !_gameEnded) {
+              _gameEnded = true;
+              _playerWon = false;
+              _backgroundMusicPlayer.stop();
+              _gameOverMusicPlayer.play(AssetSource('audio/game_over.mp3'));
+              overlays.add('dialog');
+            }
           }
         },
         speedMultiplier: _playerSpeedMultiplier,

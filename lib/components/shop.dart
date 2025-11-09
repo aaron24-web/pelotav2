@@ -132,6 +132,7 @@ class ShopManager {
   int coins = 0;
   final Map<String, ShopItem> items = {};
   final CardManager cardManager = CardManager(); // Integrate CardManager
+  MyPhysicsGame? game;
 
   // Mapa local para propiedades de UI no almacenadas en la BD
   final Map<String, Map<String, dynamic>> _itemUIMap = {
@@ -143,7 +144,7 @@ class ShopManager {
   ShopManager();
 
   void setGameInstance(MyPhysicsGame game) {
-    // _game = game; // Removed as _game is no longer a field
+    this.game = game;
   }
 
   // Inicializa los items desde Supabase
@@ -223,11 +224,16 @@ class ShopManager {
   }
 
   Future<void> buyItem(String itemId) async {
+    if (game?.isAbilityActive ?? false) {
+      throw Exception('Ya hay una habilidad activa.');
+    }
+
     final item = items[itemId];
     if (item == null || !canBuy(item)) return;
 
     await updateCoins(-item.price);
     item.quantity++;
+    game?.activateAbility(item);
   }
 
   int getTotalExtraShots() {
@@ -507,18 +513,40 @@ class _ShopScreenState extends State<ShopScreen> {
                   shopManager: widget.shopManager,
                   isBuying: _isBuying.contains(item.id),
                   onBuy: () async {
-                    if (_isBuying.contains(item.id)) return;
+                    if (_isBuying.contains(item.id) ||
+                        (widget.shopManager.game?.isAbilityActive ?? false)) {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Habilidad ya activa'),
+                          content: const Text(
+                            'Solo puedes tener una habilidad activa a la vez.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('Aceptar'),
+                            ),
+                          ],
+                        ),
+                      );
+                      return;
+                    }
 
                     if (widget.shopManager.canBuy(item)) {
                       setState(() {
                         _isBuying.add(item.id);
                       });
 
-                      await widget.shopManager.buyItem(item.id);
-
-                      setState(() {
-                        _isBuying.remove(item.id);
-                      });
+                      try {
+                        await widget.shopManager.buyItem(item.id);
+                      } catch (e) {
+                        // Handle error, e.g., show a dialog
+                      } finally {
+                        setState(() {
+                          _isBuying.remove(item.id);
+                        });
+                      }
                     } else {
                       showDialog(
                         context: context,
@@ -737,6 +765,7 @@ class _ShopItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canBuy = shopManager.canBuy(item);
+    final isAbilityActive = shopManager.game?.isAbilityActive ?? false;
 
     return Card(
       elevation: 8,
@@ -838,9 +867,10 @@ class _ShopItemCard extends StatelessWidget {
                     width: double.infinity,
                     height: 28,
                     child: ElevatedButton(
-                      onPressed: isBuying ? null : onBuy,
+                      onPressed: isBuying || isAbilityActive ? null : onBuy,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: canBuy ? item.color : Colors.grey,
+                        backgroundColor:
+                            canBuy && !isAbilityActive ? item.color : Colors.grey,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),

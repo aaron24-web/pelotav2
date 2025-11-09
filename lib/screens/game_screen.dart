@@ -24,6 +24,7 @@ class _GameScreenState extends State<GameScreen> {
       shopManager: _shopManager,
       levelType: widget.levelType,
     );
+    _shopManager.setGameInstance(_game);
   }
 
   @override
