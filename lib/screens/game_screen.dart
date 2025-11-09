@@ -38,29 +38,27 @@ class _GameScreenState extends State<GameScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          Expanded(
-            child: GameWidget.controlled(
-              gameFactory: () => _game,
-              overlayBuilderMap: {
-                'dialog': (context, game) {
-                  return _SaveScoreDialog(
-                    game: game as MyPhysicsGame,
-                    onReturnToShop: _returnToShop,
-                  );
-                },
-                'shop': (context, game) {
-                  return ShopScreen(
-                    shopManager: _shopManager,
-                    game: game as MyPhysicsGame,
-                    isOverlay: true,
-                    onClose: () {
-                      _game.overlays.remove('shop');
-                      _isShopOpen.value = false;
-                    },
-                  );
-                },
+          GameWidget.controlled(
+            gameFactory: () => _game,
+            overlayBuilderMap: {
+              'dialog': (context, game) {
+                return _SaveScoreDialog(
+                  game: game as MyPhysicsGame,
+                  onReturnToShop: _returnToShop,
+                );
               },
-            ),
+              'shop': (context, game) {
+                return ShopScreen(
+                  shopManager: _shopManager,
+                  game: game as MyPhysicsGame,
+                  isOverlay: true,
+                  onClose: () {
+                    _game.overlays.remove('shop');
+                    _isShopOpen.value = false;
+                  },
+                );
+              },
+            },
           ),
           // Botón de la tienda
           ValueListenableBuilder<bool>(

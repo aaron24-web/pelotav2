@@ -803,40 +803,37 @@ class _PaymentCardWidget extends StatelessWidget {
       child: Container(
         width: 180,
         padding: const EdgeInsets.all(12),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Icon(Icons.credit_card, color: Colors.white, size: 24),
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                    onPressed: () => onDelete(card.id),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Text(
-                '**** **** **** ${card.cardNumberLast4}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Icon(Icons.credit_card, color: Colors.white, size: 24),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                  onPressed: () => onDelete(card.id),
                 ),
+              ],
+            ),
+            const Spacer(),
+            Text(
+              '**** **** **** ${card.cardNumberLast4}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
-              Text(
-                card.cardHolder,
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-              Text(
-                'Exp: ${card.expiryDate}',
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-            ],
-          ),
+            ),
+            Text(
+              card.cardHolder,
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+            Text(
+              'Exp: ${card.expiryDate}',
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+          ],
         ),
       ),
     );
