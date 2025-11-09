@@ -805,6 +805,7 @@ class _PaymentCardWidget extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -816,22 +817,26 @@ class _PaymentCardWidget extends StatelessWidget {
                 ),
               ],
             ),
-            const Spacer(),
-            Text(
-              '**** **** **** ${card.cardNumberLast4}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              card.cardHolder,
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
-            Text(
-              'Exp: ${card.expiryDate}',
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '**** **** **** ${card.cardNumberLast4}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  card.cardHolder,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+                Text(
+                  'Exp: ${card.expiryDate}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
             ),
           ],
         ),
@@ -880,10 +885,10 @@ class _CardNumberInputFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final text = newValue.text;
+    var text = newValue.text.replaceAll(' ', '');
 
-    if (newValue.selection.baseOffset == 0) {
-      return newValue;
+    if (text.length > 16) {
+      text = text.substring(0, 16);
     }
 
     final buffer = StringBuffer();
@@ -910,28 +915,20 @@ class _ExpiryDateInputFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    var newText = newValue.text;
-    var oldText = oldValue.text;
+    final newText = newValue.text;
 
-    // If the new value is shorter than the old value, it means a character was deleted.
-    // In this case, we don't want to re-add the '/' immediately.
-    if (newText.length < oldText.length) {
-      return newValue;
-    }
-
-    // Add '/' after the second digit if not already present
-    if (newText.length == 2 && !newText.contains('/')) {
-      newText = '$newText/';
-    }
-
-    // Limit to 5 characters (MM/YY)
     if (newText.length > 5) {
       return oldValue;
     }
 
+    var text = newText.replaceAll('/', '');
+    if (text.length > 2) {
+      text = '${text.substring(0, 2)}/${text.substring(2)}';
+    }
+
     return TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: newText.length),
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
     );
   }
 }
