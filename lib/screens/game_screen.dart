@@ -1,5 +1,7 @@
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import '../ad_helper.dart';
 import '../components/game.dart';
 import '../components/shop.dart';
 import '../audio_manager.dart';
@@ -17,6 +19,9 @@ class _GameScreenState extends State<GameScreen> {
   late final MyPhysicsGame _game;
   final ShopManager _shopManager = ShopManager();
   final ValueNotifier<bool> _isShopOpen = ValueNotifier(false);
+  BannerAd? _bannerAd;
+  InterstitialAd? _interstitialAd;
+  RewardedAd? _rewardedAd;
 
   @override
   void initState() {
@@ -31,12 +36,98 @@ class _GameScreenState extends State<GameScreen> {
     } else {
       AudioManager.instance.playNormalBackgroundMusic();
     }
+
+    _loadBannerAd();
+    _loadInterstitialAd();
+    _loadRewardedAd();
+  }
+
+  void _loadBannerAd() {
+    BannerAd(
+      adUnitId: AdHelper.bannerAdUnitId,
+      request: const AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          setState(() {
+            _bannerAd = ad as BannerAd;
+          });
+        },
+        onAdFailedToLoad: (ad, err) {
+          debugPrint('Failed to load a banner ad: ${err.message}');
+          ad.dispose();
+        },
+      ),
+    ).load();
+  }
+
+  void _loadInterstitialAd() {
+    InterstitialAd.load(
+      adUnitId: AdHelper.interstitialAdUnitId,
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) {
+          _interstitialAd = ad;
+          _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              ad.dispose();
+              _returnToShop();
+            },
+            onAdFailedToShowFullScreenContent: (ad, error) {
+              ad.dispose();
+              _returnToShop();
+            },
+          );
+        },
+        onAdFailedToLoad: (err) {
+          debugPrint('Failed to load an interstitial ad: ${err.message}');
+        },
+      ),
+    );
+  }
+
+  void _loadRewardedAd() {
+    RewardedAd.load(
+      adUnitId: AdHelper.rewardedAdUnitId,
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (ad) {
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (ad) {
+              setState(() {
+                ad.dispose();
+                _rewardedAd = null;
+              });
+              _loadRewardedAd();
+            },
+          );
+
+          setState(() {
+            _rewardedAd = ad;
+          });
+        },
+        onAdFailedToLoad: (err) {
+          debugPrint('Failed to load a rewarded ad: ${err.message}');
+        },
+      ),
+    );
   }
 
   @override
   void dispose() {
     _isShopOpen.dispose();
+    _bannerAd?.dispose();
+    _interstitialAd?.dispose();
+    _rewardedAd?.dispose();
     super.dispose();
+  }
+
+  void _handleReturnToShop() {
+    if (_interstitialAd != null) {
+      _interstitialAd!.show();
+    } else {
+      _returnToShop();
+    }
   }
 
   @override
@@ -51,7 +142,7 @@ class _GameScreenState extends State<GameScreen> {
               'dialog': (context, game) {
                 return _SaveScoreDialog(
                   game: game as MyPhysicsGame,
-                  onReturnToShop: _returnToShop,
+                  onReturnToShop: _handleReturnToShop,
                 );
               },
               'shop': (context, game) {
@@ -92,6 +183,65 @@ class _GameScreenState extends State<GameScreen> {
               );
             },
           ),
+          // Botón de recompensa
+          ValueListenableBuilder<bool>(
+            valueListenable: _isShopOpen,
+            builder: (context, isShopOpen, child) {
+              if (isShopOpen || _rewardedAd == null) {
+                return const SizedBox.shrink();
+              }
+              return Positioned(
+                top: 20,
+                right: 20,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text('¿Ver un anuncio?'),
+                          content:
+                              const Text('Mira un anuncio para ganar 50 monedas.'),
+                          actions: [
+                            TextButton(
+                              child: const Text('CANCELAR'),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            TextButton(
+                              child: const Text('VER'),
+                              onPressed: () {
+                                Navigator.pop(context);
+                                _rewardedAd?.show(
+                                  onUserEarnedReward: (ad, reward) {
+                                    _shopManager.updateCoins(50);
+                                  },
+                                );
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  icon: const Icon(Icons.card_giftcard),
+                  label: const Text('Recompensa'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              );
+            },
+          ),
+          if (_bannerAd != null)
+            Align(
+              alignment: Alignment.topCenter,
+              child: SizedBox(
+                width: _bannerAd!.size.width.toDouble(),
+                height: _bannerAd!.size.height.toDouble(),
+                child: AdWidget(ad: _bannerAd!),
+              ),
+            ),
         ],
       ),
     );

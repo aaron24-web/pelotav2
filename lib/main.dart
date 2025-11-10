@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'components/game.dart';
+import 'iap_manager.dart';
 import 'screens/login_screen.dart';
+import 'screens/game_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
+  IAPManager.instance.init();
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
@@ -40,7 +46,7 @@ class MyApp extends StatelessWidget {
             );
           }
           if (snapshot.hasData && snapshot.data?.session != null) {
-            return const LevelSelectionScreen();
+            return const GameScreen(levelType: LevelType.normal);
           }
           return const LoginScreen();
         },
