@@ -67,6 +67,7 @@ class MyPhysicsGame extends Forge2DGame {
   int _score = 0;
   bool _gameEnded = false;
   bool _playerWon = false;
+  bool _isResetting = false;
 
   int get score => _score;
   bool get playerWon => _playerWon;
@@ -268,6 +269,7 @@ class MyPhysicsGame extends Forge2DGame {
           ).map((key, filename) => MapEntry(key, elements.getSprite(filename))),
           damageMultiplier: _damageMultiplier,
           onRemove: (brick) {
+            if (_isResetting) return;
             _score += 10 * _scoreMultiplier;
             _scoreText.text = 'Score: $_score';
             final scoreText = TextComponent(
@@ -404,6 +406,7 @@ class MyPhysicsGame extends Forge2DGame {
           ),
           aliens.getSprite(EnemyColor.randomColor.fileName),
           onRemove: (enemy) {
+            if (_isResetting) return;
             _score += 50 * _scoreMultiplier;
             _scoreText.text = 'Score: $_score';
             final scoreText = TextComponent(
@@ -455,6 +458,7 @@ class MyPhysicsGame extends Forge2DGame {
   }
 
   Future<void> reset() async {
+    _isResetting = true;
     // Detener música
     await AudioManager.instance.stopMusic();
 
@@ -500,6 +504,7 @@ class MyPhysicsGame extends Forge2DGame {
       unawaited(addBricks().then((_) => addEnemies()));
     }
     await addPlayer();
+    _isResetting = false;
   }
 
   // Método para crear el nivel Big Boss (MÁS DIFÍCIL)
@@ -525,6 +530,7 @@ class MyPhysicsGame extends Forge2DGame {
           ).map((key, filename) => MapEntry(key, elements.getSprite(filename))),
           damageMultiplier: _damageMultiplier,
           onRemove: (brick) {
+            if (_isResetting) return;
             _score += 15 * _scoreMultiplier;
             _scoreText.text = 'Score: $_score';
             final scoreText = TextComponent(
@@ -563,6 +569,7 @@ class MyPhysicsGame extends Forge2DGame {
           ).map((key, filename) => MapEntry(key, elements.getSprite(filename))),
           damageMultiplier: _damageMultiplier,
           onRemove: (brick) {
+            if (_isResetting) return;
             _score += 15 * _scoreMultiplier;
             _scoreText.text = 'Score: $_score';
             final scoreText = TextComponent(
@@ -601,6 +608,7 @@ class MyPhysicsGame extends Forge2DGame {
           ).map((key, filename) => MapEntry(key, elements.getSprite(filename))),
           damageMultiplier: _damageMultiplier,
           onRemove: (brick) {
+            if (_isResetting) return;
             _score += 15 * _scoreMultiplier;
             _scoreText.text = 'Score: $_score';
             final scoreText = TextComponent(
@@ -639,6 +647,7 @@ class MyPhysicsGame extends Forge2DGame {
           _bossHitCounterText.text = 'Boss Hits: $_bossHitCounter/8';
         },
         onRemove: (boss) {
+          if (_isResetting) return;
           _score +=
               500 * _scoreMultiplier; // Muchos puntos por derrotar al boss
           _scoreText.text = 'Score: $_score';
