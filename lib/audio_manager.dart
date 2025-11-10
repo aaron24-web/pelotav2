@@ -58,8 +58,9 @@ class AudioManager {
     if (_currentMusic == 'normal_background.mp3') return;
     await _backgroundMusicPlayer.stop();
     await _backgroundMusicPlayer.setReleaseMode(ReleaseMode.loop);
-    await _backgroundMusicPlayer
-        .play(AssetSource('audio/normal_background.mp3'));
+    await _backgroundMusicPlayer.play(
+      AssetSource('audio/normal_background.mp3'),
+    );
     _currentMusic = 'normal_background.mp3';
   }
 

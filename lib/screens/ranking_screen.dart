@@ -22,8 +22,9 @@ class _RankingScreenState extends State<RankingScreen> {
 
   Future<List<RankingEntry>> _fetchRanking() async {
     try {
-      final List<dynamic> data =
-          await Supabase.instance.client.rpc('get_top_scores');
+      final List<dynamic> data = await Supabase.instance.client.rpc(
+        'get_top_scores',
+      );
       final entries = data
           .asMap()
           .entries
@@ -39,9 +40,7 @@ class _RankingScreenState extends State<RankingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Ranking'),
-      ),
+      appBar: AppBar(title: const Text('Ranking')),
       body: FutureBuilder<List<RankingEntry>>(
         future: _rankingFuture,
         builder: (context, snapshot) {
@@ -85,4 +84,3 @@ class _RankingScreenState extends State<RankingScreen> {
     );
   }
 }
-

@@ -24,18 +24,8 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
   bool _isLoading = false;
 
   final List<CoinPack> _coinPacks = [
-    CoinPack(
-      id: const Uuid().v4(),
-      name: '50 Monedas',
-      price: 100,
-      coins: 50,
-    ),
-    CoinPack(
-      id: const Uuid().v4(),
-      name: '100 Monedas',
-      price: 90,
-      coins: 100,
-    ),
+    CoinPack(id: const Uuid().v4(), name: '50 Monedas', price: 100, coins: 50),
+    CoinPack(id: const Uuid().v4(), name: '100 Monedas', price: 90, coins: 100),
   ];
 
   @override
@@ -67,7 +57,9 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
               const Text('Selecciona un método de pago:'),
               const SizedBox(height: 10),
               if (widget.shopManager.cardManager.cards.isEmpty)
-                const Text('No hay tarjetas guardadas. Agrega una en la tienda.'),
+                const Text(
+                  'No hay tarjetas guardadas. Agrega una en la tienda.',
+                ),
               if (widget.shopManager.cardManager.cards.isNotEmpty)
                 _buildCardCarousel(),
               const SizedBox(height: 20),

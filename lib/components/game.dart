@@ -319,6 +319,7 @@ class MyPhysicsGame extends Forge2DGame {
               _gameEnded = true;
               _playerWon = false;
               if (levelType == LevelType.bigBoss) {
+                _score = 0;
                 AudioManager.instance.playGameOverBossMusic();
               } else {
                 AudioManager.instance.playGameOverNormalMusic();
@@ -352,6 +353,7 @@ class MyPhysicsGame extends Forge2DGame {
           _gameEnded = true;
           _playerWon = false;
           if (levelType == LevelType.bigBoss) {
+            _score = 0;
             AudioManager.instance.playGameOverBossMusic();
           } else {
             AudioManager.instance.playGameOverNormalMusic();
@@ -452,99 +454,53 @@ class MyPhysicsGame extends Forge2DGame {
     }
   }
 
-    Future<void> reset() async {
+  Future<void> reset() async {
+    // Detener música
+    await AudioManager.instance.stopMusic();
 
-      // Detener música
+    // Remover overlay
+    overlays.remove('dialog');
 
-      await AudioManager.instance.stopMusic();
+    // Resetear variables
+    _score = 0;
+    _shotCounter = 0;
+    _gameEnded = false;
+    _playerWon = false;
+    enemiesFullyAdded = false;
+    _bossHitCounter = 0;
+    _deactivateAbility();
 
-  
-
-      // Remover overlay
-
-      overlays.remove('dialog');
-
-  
-
-      // Resetear variables
-
-      _score = 0;
-
-      _shotCounter = 0;
-
-      _gameEnded = false;
-
-      _playerWon = false;
-
-      enemiesFullyAdded = false;
-
-      _bossHitCounter = 0;
-
-      _deactivateAbility();
-
-  
-
-      // Actualizar textos
-
-      _scoreText.text = 'Score: 0';
-
-      _shotCounterText.text = 'Disparos: 0/$_maxShots';
-
-      if (levelType == LevelType.bigBoss) {
-
-        _bossHitCounterText.text = 'Boss Hits: 0/8';
-
-        AudioManager.instance.playBossMusic();
-
-      } else {
-
-        AudioManager.instance.playNormalBackgroundMusic();
-
-      }
-
-  
-
-      // Asegurar que los textos estén visibles y en la posición correcta
-
-      _updateTextPositions();
-
-  
-
-      // Limpiar el mundo
-
-      world.removeAll(world.children.toList());
-
-  
-
-      // Recargar elementos del juego según el tipo de nivel
-
-      final backgroundImagePath = levelType == LevelType.bigBoss
-
-          ? 'baby.png'
-
-          : 'colored_grass.png';
-
-      final backgroundImage = await images.load(backgroundImagePath);
-
-      await world.add(Background(sprite: Sprite(backgroundImage)));
-
-      await addGround();
-
-  
-
-      if (levelType == LevelType.bigBoss) {
-
-        unawaited(addBigBossLevel());
-
-      } else {
-
-        unawaited(addBricks().then((_) => addEnemies()));
-
-      }
-
-      await addPlayer();
-
+    // Actualizar textos
+    _scoreText.text = 'Score: 0';
+    _shotCounterText.text = 'Disparos: 0/$_maxShots';
+    if (levelType == LevelType.bigBoss) {
+      _bossHitCounterText.text = 'Boss Hits: 0/8';
+      AudioManager.instance.playBossMusic();
+    } else {
+      AudioManager.instance.playNormalBackgroundMusic();
     }
+
+    // Asegurar que los textos estén visibles y en la posición correcta
+    _updateTextPositions();
+
+    // Limpiar el mundo
+    world.removeAll(world.children.toList());
+
+    // Recargar elementos del juego según el tipo de nivel
+    final backgroundImagePath = levelType == LevelType.bigBoss
+        ? 'baby.png'
+        : 'colored_grass.png';
+    final backgroundImage = await images.load(backgroundImagePath);
+    await world.add(Background(sprite: Sprite(backgroundImage)));
+    await addGround();
+
+    if (levelType == LevelType.bigBoss) {
+      unawaited(addBigBossLevel());
+    } else {
+      unawaited(addBricks().then((_) => addEnemies()));
+    }
+    await addPlayer();
+  }
 
   // Método para crear el nivel Big Boss (MÁS DIFÍCIL)
   Future<void> addBigBossLevel() async {
@@ -713,3 +669,4 @@ class MyPhysicsGame extends Forge2DGame {
     enemiesFullyAdded = true;
   }
 }
+

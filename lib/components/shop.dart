@@ -192,7 +192,8 @@ class ShopManager {
     final newCoins = coins + amount;
     await Supabase.instance.client
         .from('peloreros')
-        .update({'coins': newCoins}).eq('id', userId);
+        .update({'coins': newCoins})
+        .eq('id', userId);
     coins = newCoins;
   }
 
@@ -408,7 +409,7 @@ class _ShopScreenState extends State<ShopScreen> {
                 onPressed: widget.onClose,
               ),
           ],
-        )
+        ),
       ],
     );
   }
@@ -869,8 +870,9 @@ class _ShopItemCard extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: isBuying || isAbilityActive ? null : onBuy,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            canBuy && !isAbilityActive ? item.color : Colors.grey,
+                        backgroundColor: canBuy && !isAbilityActive
+                            ? item.color
+                            : Colors.grey,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -882,8 +884,9 @@ class _ShopItemCard extends StatelessWidget {
                               width: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : const Text(

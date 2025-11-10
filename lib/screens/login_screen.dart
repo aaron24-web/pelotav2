@@ -92,11 +92,11 @@ class _LoginScreenState extends State<LoginScreen> {
       _loading = true;
     });
     try {
-      final AuthResponse response =
-          await Supabase.instance.client.auth.signInWithPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      final AuthResponse response = await Supabase.instance.client.auth
+          .signInWithPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
       if (!mounted) return;
       if (response.user != null) {
         if (!mounted) return;
@@ -237,8 +237,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 width: double.infinity,
                                 height: 50,
                                 child: ElevatedButton(
-                                  onPressed:
-                                      _isRegistering ? _register : _login,
+                                  onPressed: _isRegistering
+                                      ? _register
+                                      : _login,
                                   child: Text(
                                     _isRegistering
                                         ? 'Registrarse'
@@ -345,8 +346,9 @@ class LevelSelectionScreen extends StatelessWidget {
                         (route) => false,
                       );
                     },
-                    style:
-                        ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                    ),
                     child: const Text('Cerrar Sesión'),
                   ),
                 ],
