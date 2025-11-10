@@ -82,155 +82,168 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
     return showDialog<void>(
       context: context,
       builder: (BuildContext dialogContext) {
-        return StatefulBuilder(builder: (context, setState) {
-          final selectedCard =
-              widget.shopManager.cardManager.cards[selectedCardIndex];
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final selectedCard =
+                widget.shopManager.cardManager.cards[selectedCardIndex];
 
-          Widget buildDot(int index) {
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              height: 8,
-              width: selectedCardIndex == index ? 24 : 8,
-              decoration: BoxDecoration(
-                color: selectedCardIndex == index
-                    ? Colors.blue
-                    : Colors.grey,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            );
-          }
+            Widget buildDot(int index) {
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                height: 8,
+                width: selectedCardIndex == index ? 24 : 8,
+                decoration: BoxDecoration(
+                  color: selectedCardIndex == index ? Colors.blue : Colors.grey,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              );
+            }
 
-          Widget buildPaymentCard(PaymentCard card, bool isSelected) {
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                color: isSelected
-                    ? Colors.blue.shade700
-                    : Colors.grey.shade800,
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: Colors.blue.withOpacity(0.5),
-                          blurRadius: 10,
-                          spreadRadius: 2,
-                        ),
-                      ]
-                    : [],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.credit_card,
-                        color: Colors.white, size: 22),
-                    const Spacer(),
-                    Text(
-                      '**** **** **** ${card.cardNumberLast4}',
-                      style: const TextStyle(
+            Widget buildPaymentCard(PaymentCard card, bool isSelected) {
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  color: isSelected
+                      ? Colors.blue.shade700
+                      : Colors.grey.shade800,
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Colors.blue.withAlpha(128),
+                            blurRadius: 10,
+                            spreadRadius: 2,
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.credit_card,
                         color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
+                        size: 22,
                       ),
+                      const Spacer(),
+                      Text(
+                        '**** **** **** ${card.cardNumberLast4}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        card.cardHolder,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                        ),
+                      ),
+                      Text(
+                        'Exp: ${card.expiryDate}',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            Widget buildCardCarousel() {
+              return Column(
+                children: [
+                  SizedBox(
+                    height: 110,
+                    child: PageView.builder(
+                      controller: pageController,
+                      itemCount: widget.shopManager.cardManager.cards.length,
+                      onPageChanged: (index) {
+                        setState(() {
+                          selectedCardIndex = index;
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        final card =
+                            widget.shopManager.cardManager.cards[index];
+                        return buildPaymentCard(
+                          card,
+                          index == selectedCardIndex,
+                        );
+                      },
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      card.cardHolder,
-                      style: const TextStyle(
-                          color: Colors.white70, fontSize: 11),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      widget.shopManager.cardManager.cards.length,
+                      (index) => buildDot(index),
                     ),
-                    Text(
-                      'Exp: ${card.expiryDate}',
-                      style: const TextStyle(
-                          color: Colors.white70, fontSize: 11),
-                    ),
-                  ],
+                  ),
+                ],
+              );
+            }
+
+            return AlertDialog(
+              title: const Text('Confirmar Compra'),
+              contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 8.0),
+              actionsPadding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 4.0,
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Se cobrará \$${pack.price} por ${pack.coins} monedas.',
+                      ),
+                      const SizedBox(height: 20),
+                      const Text('Selecciona un método de pago:'),
+                      const SizedBox(height: 10),
+                      if (widget.shopManager.cardManager.cards.isEmpty)
+                        const Text(
+                          'No hay tarjetas guardadas. Agrega una en la tienda.',
+                        ),
+                      if (widget.shopManager.cardManager.cards.isNotEmpty)
+                        buildCardCarousel(),
+                    ],
+                  ),
                 ),
               ),
-            );
-          }
-
-          Widget buildCardCarousel() {
-            return Column(
-              children: [
-                SizedBox(
-                  height: 110,
-                  child: PageView.builder(
-                    controller: pageController,
-                    itemCount: widget.shopManager.cardManager.cards.length,
-                    onPageChanged: (index) {
-                      setState(() {
-                        selectedCardIndex = index;
-                      });
-                    },
-                    itemBuilder: (context, index) {
-                      final card =
-                          widget.shopManager.cardManager.cards[index];
-                      return buildPaymentCard(
-                          card, index == selectedCardIndex);
-                    },
-                  ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Cancelar'),
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    pageController.dispose();
+                  },
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    widget.shopManager.cardManager.cards.length,
-                    (index) => buildDot(index),
-                  ),
+                ElevatedButton(
+                  child: const Text('Aceptar'),
+                  onPressed: () async {
+                    Navigator.of(dialogContext).pop();
+                    pageController.dispose();
+                    await _performPurchase(pack, selectedCard);
+                  },
                 ),
               ],
             );
-          }
-
-          return AlertDialog(
-            title: const Text('Confirmar Compra'),
-            contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 8.0),
-            actionsPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                        'Se cobrará \$${pack.price} por ${pack.coins} monedas.'),
-                    const SizedBox(height: 20),
-                    const Text('Selecciona un método de pago:'),
-                    const SizedBox(height: 10),
-                    if (widget.shopManager.cardManager.cards.isEmpty)
-                      const Text(
-                        'No hay tarjetas guardadas. Agrega una en la tienda.',
-                      ),
-                    if (widget.shopManager.cardManager.cards.isNotEmpty)
-                      buildCardCarousel(),
-                  ],
-                ),
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('Cancelar'),
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                  pageController.dispose();
-                },
-              ),
-              ElevatedButton(
-                child: const Text('Aceptar'),
-                onPressed: () async {
-                  Navigator.of(dialogContext).pop();
-                  pageController.dispose();
-                  await _performPurchase(pack, selectedCard);
-                },
-              ),
-            ],
-          );
-        });
+          },
+        );
       },
     );
   }

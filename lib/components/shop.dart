@@ -136,9 +136,13 @@ class ShopManager {
 
   // Mapa local para propiedades de UI no almacenadas en la BD
   final Map<String, Map<String, dynamic>> _itemUIMap = {
-    'extra_shots': {'icon': Icons.add_circle, 'color': Colors.blue},
-    'extra_life': {'icon': Icons.favorite, 'color': Colors.pink},
-    'mega_shots': {'icon': Icons.all_inclusive, 'color': Colors.blue.shade700},
+    'extra_shots': {'icon': Icons.add_circle, 'color': Colors.purple.shade200},
+    'extra_life': {'icon': Icons.favorite, 'color': Colors.purple.shade200},
+    'mega_shots': {
+      'icon': Icons.all_inclusive,
+      'color': Colors.purple.shade200,
+    },
+    'double_points_shot': {'icon': Icons.star_half, 'color': Colors.yellow.shade700},
   };
 
   ShopManager();
@@ -348,7 +352,7 @@ class _ShopScreenState extends State<ShopScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildCategorySection(context, 'Tiros y Vidas', [
+                            _buildCategorySection(context, 'Tiros', [
                               'extra_shots',
                               'extra_life',
                               'mega_shots',

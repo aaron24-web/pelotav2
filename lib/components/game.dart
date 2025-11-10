@@ -27,6 +27,7 @@ class MyPhysicsGame extends Forge2DGame {
   double _playerSpeedMultiplier = 1.0;
   double _damageMultiplier = 1.0;
   int _scoreMultiplier = 1;
+  bool _isDoublePointsActive = false; // New state variable
 
   // State for active ability
   ShopItem? _activeAbility;
@@ -39,7 +40,7 @@ class MyPhysicsGame extends Forge2DGame {
   late final TextComponent _bossHitCounterText;
 
   MyPhysicsGame({this.shopManager, this.levelType = LevelType.normal})
-      : super(gravity: Vector2(0, 10)) {
+    : super(gravity: Vector2(0, 10)) {
     // Aplicar items de la tienda
     if (shopManager != null) {
       _maxShots = 10 + shopManager!.getTotalExtraShots();
@@ -200,7 +201,10 @@ class MyPhysicsGame extends Forge2DGame {
             fontWeight: FontWeight.bold,
             shadows: [
               Shadow(
-                  blurRadius: 4.0, color: Colors.black, offset: Offset(2, 2)),
+                blurRadius: 4.0,
+                color: Colors.black,
+                offset: Offset(2, 2),
+              ),
             ],
           ),
         ),
@@ -223,6 +227,10 @@ class MyPhysicsGame extends Forge2DGame {
       case 'mega_shots':
         _abilityUses = 10;
         break;
+      case 'double_points_shot':
+        _isDoublePointsActive = true;
+        _abilityUses = 1; // Single use ability
+        break;
     }
     _abilityCounterText.text = '${item.name}: $_abilityUses';
   }
@@ -230,6 +238,7 @@ class MyPhysicsGame extends Forge2DGame {
   void _deactivateAbility() {
     _activeAbility = null;
     _abilityUses = 0;
+    _isDoublePointsActive = false; // Reset double points ability
     _abilityCounterText.text = '';
   }
 
@@ -251,12 +260,12 @@ class MyPhysicsGame extends Forge2DGame {
 
   Future<void> addBricks() async {
     for (var i = 0; i < 5; i++) {
-      final type = BrickType.randomType;
-      final size = BrickSize.randomSize;
+      final brickType = BrickType.randomType;
+      final brickSize = BrickSize.randomSize;
       await world.add(
         Brick(
-          type: type,
-          size: size,
+          type: brickType,
+          size: brickSize,
           damage: BrickDamage.some,
           position: Vector2(
             camera.visibleWorldRect.right / 3 +
@@ -264,16 +273,21 @@ class MyPhysicsGame extends Forge2DGame {
             0,
           ),
           sprites: brickFileNames(
-            type,
-            size,
+            brickType,
+            brickSize,
           ).map((key, filename) => MapEntry(key, elements.getSprite(filename))),
           damageMultiplier: _damageMultiplier,
           onRemove: (brick) {
             if (_isResetting) return;
-            _score += 10 * _scoreMultiplier;
+            int points = 10 * _scoreMultiplier;
+            if (_isDoublePointsActive) {
+              points *= 2;
+              _isDoublePointsActive = false; // Deactivate after one use
+            }
+            _score += points;
             _scoreText.text = 'Score: $_score';
             final scoreText = TextComponent(
-              text: '+10',
+              text: '+$points',
               position: brick.position.clone(),
               anchor: Anchor.center,
               textRenderer: TextPaint(
@@ -407,10 +421,15 @@ class MyPhysicsGame extends Forge2DGame {
           aliens.getSprite(EnemyColor.randomColor.fileName),
           onRemove: (enemy) {
             if (_isResetting) return;
-            _score += 50 * _scoreMultiplier;
+            int points = 50 * _scoreMultiplier;
+            if (_isDoublePointsActive) {
+              points *= 2;
+              _isDoublePointsActive = false; // Deactivate after one use
+            }
+            _score += points;
             _scoreText.text = 'Score: $_score';
             final scoreText = TextComponent(
-              text: '+50',
+              text: '+$points',
               position: enemy.position.clone(),
               anchor: Anchor.center,
               textRenderer: TextPaint(
@@ -646,36 +665,9 @@ class MyPhysicsGame extends Forge2DGame {
           _bossHitCounter++;
           _bossHitCounterText.text = 'Boss Hits: $_bossHitCounter/8';
         },
-        onRemove: (boss) {
-          if (_isResetting) return;
-          _score +=
-              500 * _scoreMultiplier; // Muchos puntos por derrotar al boss
-          _scoreText.text = 'Score: $_score';
-          final scoreText = TextComponent(
-            text: '+500',
-            position: boss.position.clone(),
-            anchor: Anchor.center,
-            textRenderer: TextPaint(
-              style: TextStyle(
-                color: Colors.yellow,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          );
-          world.add(scoreText);
-          scoreText.add(
-            MoveByEffect(
-              Vector2(0, -2),
-              EffectController(duration: 2),
-              onComplete: () => scoreText.removeFromParent(),
-            ),
-          );
-        },
       ),
     );
 
     enemiesFullyAdded = true;
   }
 }
-
