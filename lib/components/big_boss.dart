@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
 
 import 'body_component_with_user_data.dart';
+import 'player.dart';
 
 const bigBossSize = 12.0; // Más grande que los enemigos normales (5.0)
 const bigBossHealth = 8; // Requiere 8 impactos para ser derrotado
@@ -42,23 +44,25 @@ class BigBoss extends BodyComponentWithUserData with ContactCallbacks {
 
   @override
   void beginContact(Object other, Contact contact) {
-    _health--;
-    onHit?.call();
+    if (other is Player) {
+      _health--;
+      onHit?.call();
 
-    // Efecto visual de daño (parpadeo)
-    if (children.isNotEmpty) {
-      final spriteComponent = children.first as SpriteComponent;
-      spriteComponent.add(
-        OpacityEffect.to(
-          0.3,
-          EffectController(duration: 0.1, reverseDuration: 0.1),
-        ),
-      );
-    }
+      // Efecto visual de daño (parpadeo)
+      if (children.isNotEmpty) {
+        final spriteComponent = children.first as SpriteComponent;
+        spriteComponent.add(
+          OpacityEffect.to(
+            0.3,
+            EffectController(duration: 0.1, reverseDuration: 0.1),
+          ),
+        );
+      }
 
-    // Si se queda sin salud, remover
-    if (_health <= 0) {
-      removeFromParent();
+      // Si se queda sin salud, remover
+      if (_health <= 0) {
+        removeFromParent();
+      }
     }
 
     super.beginContact(other, contact);

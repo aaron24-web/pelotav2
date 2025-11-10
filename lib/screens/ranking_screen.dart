@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/ranking_entry.dart';
+import '../audio_manager.dart';
 
 class RankingScreen extends StatefulWidget {
   const RankingScreen({super.key});
@@ -16,11 +17,13 @@ class _RankingScreenState extends State<RankingScreen> {
   void initState() {
     super.initState();
     _rankingFuture = _fetchRanking();
+    AudioManager.instance.playMenuMusic();
   }
 
   Future<List<RankingEntry>> _fetchRanking() async {
     try {
-      final List<dynamic> data = await Supabase.instance.client.rpc('get_top_scores');
+      final List<dynamic> data =
+          await Supabase.instance.client.rpc('get_top_scores');
       final entries = data
           .asMap()
           .entries
@@ -82,3 +85,4 @@ class _RankingScreenState extends State<RankingScreen> {
     );
   }
 }
+

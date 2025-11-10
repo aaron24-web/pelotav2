@@ -2,6 +2,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import '../components/game.dart';
 import '../components/shop.dart';
+import '../audio_manager.dart';
 
 class GameScreen extends StatefulWidget {
   final LevelType levelType;
@@ -25,6 +26,11 @@ class _GameScreenState extends State<GameScreen> {
       levelType: widget.levelType,
     );
     _shopManager.setGameInstance(_game);
+    if (widget.levelType == LevelType.bigBoss) {
+      AudioManager.instance.playBossMusic();
+    } else {
+      AudioManager.instance.playNormalBackgroundMusic();
+    }
   }
 
   @override
@@ -94,6 +100,7 @@ class _GameScreenState extends State<GameScreen> {
   void _returnToShop() {
     _shopManager.resetItemsForNewTurn();
     if (!mounted) return;
+    AudioManager.instance.playMenuMusic();
     Navigator.of(context).pop(); // Vuelve a la pantalla de login
   }
 }

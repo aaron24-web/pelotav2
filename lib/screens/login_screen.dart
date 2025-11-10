@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'game_screen.dart';
 import '../components/game.dart';
 import 'ranking_screen.dart';
+import '../audio_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,6 +19,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _usernameController = TextEditingController();
   bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    AudioManager.instance.playMenuMusic();
+  }
 
   @override
   void dispose() {
@@ -274,6 +281,7 @@ class LevelSelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AudioManager.instance.playMenuMusic();
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,

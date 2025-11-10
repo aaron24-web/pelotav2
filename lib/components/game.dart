@@ -7,9 +7,9 @@ import 'package:flame_forge2d/flame_forge2d.dart';
 import 'package:flame_kenney_xml/flame_kenney_xml.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../audio_manager.dart';
 import 'background.dart';
 import 'brick.dart';
 import 'ground.dart';
@@ -61,10 +61,6 @@ class MyPhysicsGame extends Forge2DGame {
   late final XmlSpriteSheet elements;
   late final XmlSpriteSheet tiles;
 
-  late final AudioPlayer _backgroundMusicPlayer;
-  late final AudioPlayer _winMusicPlayer;
-  late final AudioPlayer _gameOverMusicPlayer;
-
   late final TextComponent _shotCounterText;
   int _shotCounter = 0;
   late final TextComponent _scoreText;
@@ -111,13 +107,6 @@ class MyPhysicsGame extends Forge2DGame {
     aliens = spriteSheets[0];
     elements = spriteSheets[1];
     tiles = spriteSheets[2];
-
-    _backgroundMusicPlayer = AudioPlayer();
-    _winMusicPlayer = AudioPlayer();
-    _gameOverMusicPlayer = AudioPlayer();
-
-    await _backgroundMusicPlayer.setReleaseMode(ReleaseMode.loop);
-    await _backgroundMusicPlayer.play(AssetSource('audio/fondo.mp3'));
 
     await super.onLoad();
 
@@ -329,8 +318,11 @@ class MyPhysicsGame extends Forge2DGame {
             if (_shotCounter >= _maxShots && !_gameEnded) {
               _gameEnded = true;
               _playerWon = false;
-              _backgroundMusicPlayer.stop();
-              _gameOverMusicPlayer.play(AssetSource('audio/game_over.mp3'));
+              if (levelType == LevelType.bigBoss) {
+                AudioManager.instance.playGameOverBossMusic();
+              } else {
+                AudioManager.instance.playGameOverNormalMusic();
+              }
               overlays.add('dialog');
             }
           }
@@ -359,8 +351,11 @@ class MyPhysicsGame extends Forge2DGame {
         if (!_gameEnded) {
           _gameEnded = true;
           _playerWon = false;
-          _backgroundMusicPlayer.stop();
-          _gameOverMusicPlayer.play(AssetSource('audio/game_over.mp3'));
+          if (levelType == LevelType.bigBoss) {
+            AudioManager.instance.playGameOverBossMusic();
+          } else {
+            AudioManager.instance.playGameOverNormalMusic();
+          }
           overlays.add('dialog');
         }
       } else {
@@ -376,8 +371,7 @@ class MyPhysicsGame extends Forge2DGame {
           world.children.whereType<TextComponent>().isEmpty) {
         _gameEnded = true;
         _playerWon = true;
-        _backgroundMusicPlayer.stop();
-        _winMusicPlayer.play(AssetSource('audio/win.mp3'));
+        AudioManager.instance.playWinBossMusic();
         overlays.add('dialog');
       }
     } else {
@@ -388,8 +382,7 @@ class MyPhysicsGame extends Forge2DGame {
           world.children.whereType<TextComponent>().isEmpty) {
         _gameEnded = true;
         _playerWon = true;
-        _backgroundMusicPlayer.stop();
-        _winMusicPlayer.play(AssetSource('audio/win.mp3'));
+        AudioManager.instance.playWinNormalMusic();
         overlays.add('dialog');
       }
     }
@@ -459,54 +452,99 @@ class MyPhysicsGame extends Forge2DGame {
     }
   }
 
-  Future<void> reset() async {
-    // Detener música
-    await _backgroundMusicPlayer.stop();
-    await _winMusicPlayer.stop();
-    await _gameOverMusicPlayer.stop();
+    Future<void> reset() async {
 
-    // Remover overlay
-    overlays.remove('dialog');
+      // Detener música
 
-    // Resetear variables
-    _score = 0;
-    _shotCounter = 0;
-    _gameEnded = false;
-    _playerWon = false;
-    enemiesFullyAdded = false;
-    _bossHitCounter = 0;
+      await AudioManager.instance.stopMusic();
 
-    // Actualizar textos
-    _scoreText.text = 'Score: 0';
-    _shotCounterText.text = 'Disparos: 0/$_maxShots';
-    if (levelType == LevelType.bigBoss) {
-      _bossHitCounterText.text = 'Boss Hits: 0/8';
+  
+
+      // Remover overlay
+
+      overlays.remove('dialog');
+
+  
+
+      // Resetear variables
+
+      _score = 0;
+
+      _shotCounter = 0;
+
+      _gameEnded = false;
+
+      _playerWon = false;
+
+      enemiesFullyAdded = false;
+
+      _bossHitCounter = 0;
+
+      _deactivateAbility();
+
+  
+
+      // Actualizar textos
+
+      _scoreText.text = 'Score: 0';
+
+      _shotCounterText.text = 'Disparos: 0/$_maxShots';
+
+      if (levelType == LevelType.bigBoss) {
+
+        _bossHitCounterText.text = 'Boss Hits: 0/8';
+
+        AudioManager.instance.playBossMusic();
+
+      } else {
+
+        AudioManager.instance.playNormalBackgroundMusic();
+
+      }
+
+  
+
+      // Asegurar que los textos estén visibles y en la posición correcta
+
+      _updateTextPositions();
+
+  
+
+      // Limpiar el mundo
+
+      world.removeAll(world.children.toList());
+
+  
+
+      // Recargar elementos del juego según el tipo de nivel
+
+      final backgroundImagePath = levelType == LevelType.bigBoss
+
+          ? 'baby.png'
+
+          : 'colored_grass.png';
+
+      final backgroundImage = await images.load(backgroundImagePath);
+
+      await world.add(Background(sprite: Sprite(backgroundImage)));
+
+      await addGround();
+
+  
+
+      if (levelType == LevelType.bigBoss) {
+
+        unawaited(addBigBossLevel());
+
+      } else {
+
+        unawaited(addBricks().then((_) => addEnemies()));
+
+      }
+
+      await addPlayer();
+
     }
-
-    // Asegurar que los textos estén visibles y en la posición correcta
-    _updateTextPositions();
-
-    // Limpiar el mundo
-    world.removeAll(world.children.toList());
-
-    // Reiniciar música de fondo
-    await _backgroundMusicPlayer.play(AssetSource('audio/fondo.mp3'));
-
-    // Recargar elementos del juego según el tipo de nivel
-    final backgroundImagePath = levelType == LevelType.bigBoss
-        ? 'baby.png'
-        : 'colored_grass.png';
-    final backgroundImage = await images.load(backgroundImagePath);
-    await world.add(Background(sprite: Sprite(backgroundImage)));
-    await addGround();
-
-    if (levelType == LevelType.bigBoss) {
-      unawaited(addBigBossLevel());
-    } else {
-      unawaited(addBricks().then((_) => addEnemies()));
-    }
-    await addPlayer();
-  }
 
   // Método para crear el nivel Big Boss (MÁS DIFÍCIL)
   Future<void> addBigBossLevel() async {
