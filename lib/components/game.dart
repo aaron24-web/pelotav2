@@ -34,6 +34,10 @@ class MyPhysicsGame extends Forge2DGame {
   late final TextComponent _abilityCounterText;
   bool get isAbilityActive => _activeAbility != null;
 
+  // Boss level state
+  int _bossHitCounter = 0;
+  late final TextComponent _bossHitCounterText;
+
   MyPhysicsGame({this.shopManager, this.levelType = LevelType.normal})
       : super(gravity: Vector2(0, 10)) {
     // Aplicar items de la tienda
@@ -77,6 +81,9 @@ class MyPhysicsGame extends Forge2DGame {
     _shotCounterText.position = Vector2(viewportSize.x - 10, 10);
     _scoreText.position = Vector2(viewportSize.x - 10, 35);
     _abilityCounterText.position = Vector2(viewportSize.x - 10, 60);
+    if (levelType == LevelType.bigBoss) {
+      _bossHitCounterText.position = Vector2(viewportSize.x - 10, 85);
+    }
   }
 
   @override
@@ -189,6 +196,27 @@ class MyPhysicsGame extends Forge2DGame {
       ),
     );
     camera.viewport.add(_abilityCounterText);
+
+    if (levelType == LevelType.bigBoss) {
+      _bossHitCounterText = TextComponent(
+        text: 'Boss Hits: 0/8',
+        anchor: Anchor.topRight,
+        position: Vector2(viewportSize.x - 10, 85),
+        priority: 1000,
+        textRenderer: TextPaint(
+          style: TextStyle(
+            color: Colors.red,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            shadows: [
+              Shadow(
+                  blurRadius: 4.0, color: Colors.black, offset: Offset(2, 2)),
+            ],
+          ),
+        ),
+      );
+      camera.viewport.add(_bossHitCounterText);
+    }
 
     await addPlayer();
   }
@@ -415,11 +443,15 @@ class MyPhysicsGame extends Forge2DGame {
         return;
       }
       final userId = currentUser.id;
+      var scoreToSave = _score;
+      if (levelType == LevelType.bigBoss && !_playerWon) {
+        scoreToSave = 0;
+      }
       await Supabase.instance.client.from('puntaje').insert([
-        {'pelorero_id': userId, 'score': _score},
+        {'pelorero_id': userId, 'score': scoreToSave},
       ]);
       debugPrint(
-        'Score guardado exitosamente para el usuario $userId - $_score',
+        'Score guardado exitosamente para el usuario $userId - $scoreToSave',
       );
     } catch (e) {
       debugPrint('Error al guardar score: $e');
@@ -442,10 +474,14 @@ class MyPhysicsGame extends Forge2DGame {
     _gameEnded = false;
     _playerWon = false;
     enemiesFullyAdded = false;
+    _bossHitCounter = 0;
 
     // Actualizar textos
     _scoreText.text = 'Score: 0';
     _shotCounterText.text = 'Disparos: 0/$_maxShots';
+    if (levelType == LevelType.bigBoss) {
+      _bossHitCounterText.text = 'Boss Hits: 0/8';
+    }
 
     // Asegurar que los textos estén visibles y en la posición correcta
     _updateTextPositions();
@@ -508,7 +544,7 @@ class MyPhysicsGame extends Forge2DGame {
             world.add(scoreText);
             scoreText.add(
               MoveByEffect(
-                Vector2(0,-1),
+                Vector2(0, -1),
                 EffectController(duration: 1),
                 onComplete: () => scoreText.removeFromParent(),
               ),
@@ -599,10 +635,15 @@ class MyPhysicsGame extends Forge2DGame {
     await Future<void>.delayed(const Duration(seconds: 1));
 
     // Agregar el Big Boss en el centro de la estructura
+    final bossSprite = Sprite(await images.load('boss_cube.png'));
     await world.add(
       BigBoss(
         Vector2(centerX, baseY - 1.0),
-        aliens.getSprite('alienPink_suit.png'), // Usar sprite de boss
+        bossSprite,
+        onHit: () {
+          _bossHitCounter++;
+          _bossHitCounterText.text = 'Boss Hits: $_bossHitCounter/8';
+        },
         onRemove: (boss) {
           _score +=
               500 * _scoreMultiplier; // Muchos puntos por derrotar al boss

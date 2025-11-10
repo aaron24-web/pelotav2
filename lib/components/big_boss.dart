@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame_forge2d/flame_forge2d.dart';
@@ -5,15 +6,17 @@ import 'package:flame_forge2d/flame_forge2d.dart';
 import 'body_component_with_user_data.dart';
 
 const bigBossSize = 12.0; // Más grande que los enemigos normales (5.0)
-const bigBossHealth = 5; // Requiere 5 impactos para ser derrotado (más difícil)
+const bigBossHealth = 8; // Requiere 8 impactos para ser derrotado
 
 class BigBoss extends BodyComponentWithUserData with ContactCallbacks {
   int _health = bigBossHealth;
+  final VoidCallback? onHit;
 
   BigBoss(
     Vector2 position,
     Sprite sprite, {
     void Function(BodyComponent)? onRemove,
+    this.onHit,
   }) : super(
          onRemoveCallback: onRemove,
          renderBody: false,
@@ -39,29 +42,23 @@ class BigBoss extends BodyComponentWithUserData with ContactCallbacks {
 
   @override
   void beginContact(Object other, Contact contact) {
-    var interceptVelocity =
-        (contact.bodyA.linearVelocity - contact.bodyB.linearVelocity).length
-            .abs();
+    _health--;
+    onHit?.call();
 
-    // Requiere más velocidad para recibir daño (más difícil)
-    if (interceptVelocity > 45) {
-      _health--;
+    // Efecto visual de daño (parpadeo)
+    if (children.isNotEmpty) {
+      final spriteComponent = children.first as SpriteComponent;
+      spriteComponent.add(
+        OpacityEffect.to(
+          0.3,
+          EffectController(duration: 0.1, reverseDuration: 0.1),
+        ),
+      );
+    }
 
-      // Efecto visual de daño (parpadeo)
-      if (children.isNotEmpty) {
-        final spriteComponent = children.first as SpriteComponent;
-        spriteComponent.add(
-          OpacityEffect.to(
-            0.3,
-            EffectController(duration: 0.1, reverseDuration: 0.1),
-          ),
-        );
-      }
-
-      // Si se queda sin salud, remover
-      if (_health <= 0) {
-        removeFromParent();
-      }
+    // Si se queda sin salud, remover
+    if (_health <= 0) {
+      removeFromParent();
     }
 
     super.beginContact(other, contact);
