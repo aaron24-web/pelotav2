@@ -77,7 +77,7 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
     }
 
     int selectedCardIndex = 0;
-    final pageController = PageController(viewportFraction: 0.8);
+    final pageController = PageController(viewportFraction: 0.7);
 
     return showDialog<void>(
       context: context,
@@ -104,7 +104,7 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
           Widget buildPaymentCard(PaymentCard card, bool isSelected) {
             return AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.symmetric(horizontal: 10),
+              margin: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
                 color: isSelected
@@ -121,31 +121,31 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
                     : [],
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(10.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Icon(Icons.credit_card,
-                        color: Colors.white, size: 30),
+                        color: Colors.white, size: 22),
                     const Spacer(),
                     Text(
                       '**** **** **** ${card.cardNumberLast4}',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 13,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 4),
                     Text(
                       card.cardHolder,
                       style: const TextStyle(
-                          color: Colors.white70, fontSize: 14),
+                          color: Colors.white70, fontSize: 11),
                     ),
                     Text(
                       'Exp: ${card.expiryDate}',
                       style: const TextStyle(
-                          color: Colors.white70, fontSize: 14),
+                          color: Colors.white70, fontSize: 11),
                     ),
                   ],
                 ),
@@ -157,7 +157,7 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
             return Column(
               children: [
                 SizedBox(
-                  height: 150,
+                  height: 110,
                   child: PageView.builder(
                     controller: pageController,
                     itemCount: widget.shopManager.cardManager.cards.length,
@@ -188,6 +188,8 @@ class _CoinPurchaseDialogState extends State<CoinPurchaseDialog> {
 
           return AlertDialog(
             title: const Text('Confirmar Compra'),
+            contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 8.0),
+            actionsPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
             content: SizedBox(
               width: double.maxFinite,
               child: SingleChildScrollView(

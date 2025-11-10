@@ -330,7 +330,7 @@ class _ShopScreenState extends State<ShopScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Colors.purple.shade900, Colors.blue.shade900],
+                colors: [Colors.cyan.shade700, Colors.blue.shade700],
               ),
             ),
             child: SafeArea(
