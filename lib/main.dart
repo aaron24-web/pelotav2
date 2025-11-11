@@ -4,9 +4,10 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'components/game.dart';
+import 'components/shop.dart';
 import 'iap_manager.dart';
+import 'screens/level_selection_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/game_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,8 +29,15 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final ShopManager _shopManager = ShopManager();
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +54,7 @@ class MyApp extends StatelessWidget {
             );
           }
           if (snapshot.hasData && snapshot.data?.session != null) {
-            return const GameScreen(levelType: LevelType.normal);
+            return LevelSelectionScreen(shopManager: _shopManager);
           }
           return const LoginScreen();
         },

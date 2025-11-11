@@ -8,8 +8,9 @@ import '../audio_manager.dart';
 
 class GameScreen extends StatefulWidget {
   final LevelType levelType;
+  final ShopManager shopManager;
 
-  const GameScreen({super.key, required this.levelType});
+  const GameScreen({super.key, required this.levelType, required this.shopManager});
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -17,7 +18,6 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   late final MyPhysicsGame _game;
-  final ShopManager _shopManager = ShopManager();
   final ValueNotifier<bool> _isShopOpen = ValueNotifier(false);
   BannerAd? _bannerAd;
   InterstitialAd? _interstitialAd;
@@ -27,10 +27,10 @@ class _GameScreenState extends State<GameScreen> {
   void initState() {
     super.initState();
     _game = MyPhysicsGame(
-      shopManager: _shopManager,
+      shopManager: widget.shopManager,
       levelType: widget.levelType,
     );
-    _shopManager.setGameInstance(_game);
+    widget.shopManager.setGameInstance(_game);
     if (widget.levelType == LevelType.bigBoss) {
       AudioManager.instance.playBossMusic();
     } else {
@@ -147,7 +147,7 @@ class _GameScreenState extends State<GameScreen> {
               },
               'shop': (context, game) {
                 return ShopScreen(
-                  shopManager: _shopManager,
+                  shopManager: widget.shopManager,
                   game: game as MyPhysicsGame,
                   isOverlay: true,
                   onClose: () {
@@ -213,7 +213,7 @@ class _GameScreenState extends State<GameScreen> {
                                 Navigator.pop(context);
                                 _rewardedAd?.show(
                                   onUserEarnedReward: (ad, reward) {
-                                    _shopManager.updateCoins(50);
+                                    widget.shopManager.updateCoins(50);
                                   },
                                 );
                               },
@@ -248,7 +248,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _returnToShop() {
-    _shopManager.resetItemsForNewTurn();
+    widget.shopManager.resetItemsForNewTurn();
     if (!mounted) return;
     AudioManager.instance.playMenuMusic();
     Navigator.of(context).pop(); // Vuelve a la pantalla de login

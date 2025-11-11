@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'components/shop.dart';
 
 // Placeholder product IDs. Replace with your actual IDs from the stores.
 const String productIdConsumable = 'pack_1000_monedas';
@@ -12,16 +14,25 @@ class IAPManager {
   
   final List<ProductDetails> _products = [];
   bool _isAvailable = false;
+  ShopManager? _shopManager;
 
   // Singleton pattern
   IAPManager._privateConstructor();
   static final IAPManager _instance = IAPManager._privateConstructor();
   static IAPManager get instance => _instance;
 
+  void setShopManager(ShopManager manager) {
+    _shopManager = manager;
+  }
+
   Future<void> init() async {
     _isAvailable = await _inAppPurchase.isAvailable();
     if (!_isAvailable) {
       // Handle store not available
+      if (kDebugMode) {
+        print("In-app purchases not available. Using mock data.");
+        _loadMockProducts();
+      }
       return;
     }
 
@@ -48,19 +59,68 @@ class IAPManager {
     };
     final ProductDetailsResponse response = await _inAppPurchase.queryProductDetails(productIds);
     if (response.notFoundIDs.isNotEmpty) {
-      // Handle any products that were not found.
+      if (kDebugMode) {
+        print("Some products not found in store. Using mock data for UI.");
+        _loadMockProducts();
+        return;
+      }
     }
     _products.clear();
     _products.addAll(response.productDetails);
   }
 
+  void _loadMockProducts() {
+    _products.clear();
+    _products.addAll([
+      ProductDetails(
+        id: productIdConsumable,
+        title: 'Paquete de 1000 Monedas',
+        description: 'Compra 1000 monedas para usar en la tienda.',
+        price: '\$0.99',
+        rawPrice: 0.99,
+        currencyCode: 'USD',
+      ),
+      ProductDetails(
+        id: productIdNonConsumable,
+        title: 'Desbloquear Nivel Jefe',
+        description: 'Acceso permanente al nivel del Jefe Final.',
+        price: '\$4.99',
+        rawPrice: 4.99,
+        currencyCode: 'USD',
+      ),
+      ProductDetails(
+        id: productIdSubscription,
+        title: 'Pase de Temporada',
+        description: 'Obtén un multiplicador de puntaje x2.',
+        price: '\$2.99/mes',
+        rawPrice: 2.99,
+        currencyCode: 'USD',
+      ),
+    ]);
+  }
+
   List<ProductDetails> get products => _products;
 
-  void buyProduct(ProductDetails productDetails) {
+  Future<void> buyProduct(ProductDetails productDetails) async {
+    if (!_isAvailable) {
+      if (kDebugMode) {
+        print("Cannot buy product, store is not available. Simulating purchase.");
+        // Simulate purchase for debugging without a real store.
+        await _handleCompletedPurchase(PurchaseDetails(
+          productID: productDetails.id,
+          status: PurchaseStatus.purchased,
+          verificationData: PurchaseVerificationData(localVerificationData: '', serverVerificationData: '', source: ''),
+          transactionDate: DateTime.now().millisecondsSinceEpoch.toString(),
+        ));
+      }
+      return;
+    }
+
     final PurchaseParam purchaseParam = PurchaseParam(productDetails: productDetails);
     if (productDetails.id == productIdConsumable) {
       _inAppPurchase.buyConsumable(purchaseParam: purchaseParam);
-    } else {
+    }
+    else {
       _inAppPurchase.buyNonConsumable(purchaseParam: purchaseParam);
     }
   }
@@ -84,21 +144,28 @@ class IAPManager {
   }
 
   Future<void> _handleCompletedPurchase(PurchaseDetails purchaseDetails) async {
-    // This is where you would typically verify the purchase with your backend.
-    // For this exercise, we will simulate verification and deliver the content directly.
+    if (_shopManager == null) return;
 
     switch (purchaseDetails.productID) {
       case productIdConsumable:
-        // Grant 1000 coins. This logic will be connected to the ShopManager later.
-        print('User purchased 1000 coins.');
+        await _shopManager!.updateCoins(1000);
+        if (kDebugMode) {
+          print('User purchased 1000 coins.');
+        }
         break;
       case productIdNonConsumable:
-        // Unlock the big boss level. This state should be saved persistently.
-        print('User unlocked the Big Boss level.');
+        _shopManager!.bossLevelUnlocked = true;
+        // In a real app, you would save this to persistent storage (e.g., Supabase)
+        if (kDebugMode) {
+          print('User unlocked the Big Boss level.');
+        }
         break;
       case productIdSubscription:
-        // Activate the season pass. This state should be saved persistently with its expiry date.
-        print('User subscribed to the Season Pass.');
+        _shopManager!.seasonPassActive = true;
+        // In a real app, you would save this to persistent storage with an expiry date
+        if (kDebugMode) {
+          print('User subscribed to the Season Pass.');
+        }
         break;
     }
   }

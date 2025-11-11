@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Added for TextInputFormatter
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../iap_manager.dart';
 import 'game.dart';
 import '../models/coin_pack.dart';
 import '../models/voucher.dart';
@@ -133,6 +135,8 @@ class ShopManager {
   final Map<String, ShopItem> items = {};
   final CardManager cardManager = CardManager(); // Integrate CardManager
   MyPhysicsGame? game;
+  bool bossLevelUnlocked = false;
+  bool seasonPassActive = false;
 
   // Mapa local para propiedades de UI no almacenadas en la BD
   final Map<String, Map<String, dynamic>> _itemUIMap = {
@@ -260,6 +264,7 @@ class ShopManager {
   }
 
   int getScoreMultiplier() {
+    if (seasonPassActive) return 2;
     return hasComboPack() ? 2 : 1;
   }
 
@@ -301,6 +306,7 @@ class _ShopScreenState extends State<ShopScreen> {
   void initState() {
     super.initState();
     _initFuture = widget.shopManager.initialize();
+    IAPManager.instance.setShopManager(widget.shopManager);
   }
 
   @override
@@ -352,6 +358,8 @@ class _ShopScreenState extends State<ShopScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            _buildIAPSection(context),
+                            const SizedBox(height: 20),
                             _buildCategorySection(context, 'Tiros', [
                               'extra_shots',
                               'extra_life',
@@ -470,6 +478,105 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
           style: TextButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIAPSection(BuildContext context) {
+    final products = IAPManager.instance.products;
+    if (products.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Text(
+            'Ofertas Especiales',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 180,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: products.length,
+            itemBuilder: (context, index) {
+              final product = products[index];
+              return Container(
+                width: 150,
+                margin: const EdgeInsets.only(right: 12),
+                child: Card(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Colors.green.shade200, Colors.green.shade400],
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            product.title,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            product.description,
+                            style: const TextStyle(fontSize: 12, color: Colors.white70),
+                            textAlign: TextAlign.center,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const Spacer(),
+                          ElevatedButton(
+                            onPressed: () async {
+                              await IAPManager.instance.buyProduct(product);
+                              setState(() {});
+                              if (mounted) {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Compra Simulada'),
+                                    content: Text('Has recibido "${product.title}".'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('OK'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                            },
+                            child: Text(product.price),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ],

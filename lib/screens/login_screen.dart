@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'game_screen.dart';
-import '../components/game.dart';
-import 'ranking_screen.dart';
 import '../audio_manager.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -92,19 +89,10 @@ class _LoginScreenState extends State<LoginScreen> {
       _loading = true;
     });
     try {
-      final AuthResponse response = await Supabase.instance.client.auth
-          .signInWithPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
-          );
-      if (!mounted) return;
-      if (response.user != null) {
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LevelSelectionScreen()),
-        );
-      }
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
     } on AuthException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -273,127 +261,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class LevelSelectionScreen extends StatelessWidget {
-  const LevelSelectionScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    AudioManager.instance.playMenuMusic();
-    return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset('assets/images/colored_land.png', fit: BoxFit.cover),
-          Center(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Selecciona un Nivel',
-                    style: TextStyle(
-                      fontSize: 50,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 10.0,
-                          color: Colors.black,
-                          offset: Offset(5.0, 5.0),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 60),
-                  _buildLevelButton(
-                    context,
-                    'Nivel Normal',
-                    () => _navigateToGame(context, LevelType.normal),
-                    Colors.blue.shade700,
-                  ),
-                  const SizedBox(height: 20),
-                  _buildLevelButton(
-                    context,
-                    'Nivel Boss',
-                    () => _navigateToGame(context, LevelType.bigBoss),
-                    Colors.red.shade800,
-                  ),
-                  const SizedBox(height: 20),
-                  _buildLevelButton(
-                    context,
-                    'Ranking',
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RankingScreen(),
-                      ),
-                    ),
-                    Colors.green.shade600,
-                  ),
-                  const SizedBox(height: 40),
-                  ElevatedButton(
-                    onPressed: () async {
-                      await Supabase.instance.client.auth.signOut();
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
-                        ),
-                        (route) => false,
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey,
-                    ),
-                    child: const Text('Cerrar Sesión'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLevelButton(
-    BuildContext context,
-    String text,
-    VoidCallback onPressed,
-    Color color,
-  ) {
-    return SizedBox(
-      width: 300,
-      height: 60,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18.0),
-          ),
-          elevation: 5,
-        ),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _navigateToGame(BuildContext context, LevelType levelType) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => GameScreen(levelType: levelType)),
     );
   }
 }
